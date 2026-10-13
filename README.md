@@ -1,268 +1,319 @@
-# Desktop Widgets
+<h1 align="center">Nilam</h1>
 
-macOS-style widget cards for the Windows desktop: clock, weather, media player
-with a seekable wave progress bar, system stats, battery, notes, and a large
-weekday banner across the top of the screen.
+<p align="center">
+  <b>Desktop widgets for Windows.</b><br>
+  Clock, weather, now playing, system stats, battery and notes, with a weekday banner -<br>
+  sitting on your desktop, under every window.
+</p>
 
-No installer bundle, no runtime download, no third-party app. It compiles from
-source using the C# compiler that is already inside Windows.
+<p align="center">
+  <a href="https://github.com/jithin-jz/nilam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/jithin-jz/nilam/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/jithin-jz/nilam/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/jithin-jz/nilam?label=release"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue"></a>
+  <img alt="Windows 10 version 1809 or later, and Windows 11" src="https://img.shields.io/badge/Windows-10%20(1809+)%20%C2%B7%2011-0078d4">
+</p>
+
+<p align="center">
+  <img src="docs/images/hero.png" width="100%"
+       alt="Seven Nilam cards on a desktop: a clock, weather for Kozhikode, a now-playing card with a wave progress bar, system stats, battery and notes stacked on the right, and the word SATURDAY in large spaced capitals across the top.">
+</p>
+<p align="center"><sub>
+  Drawn from the app's own card markup with sample data, on a generated backdrop -
+  <a href="tools/make-readme-images.ps1">see how</a>.
+</sub></p>
+
+> *Nilam* (നിലം) is Malayalam for the ground: the layer everything else stands
+> on. That is where these widgets live. Every app window draws over them, so
+> they are part of your desktop rather than something floating above your work.
+
+---
+
+## What you get
+
+| Card | What it shows |
+|---|---|
+| **Clock** | The time in your own Windows format (12- or 24-hour), the day and the date |
+| **Weather** | Temperature, conditions and today's high and low, for a city you pick by name |
+| **Now playing** | Track, artist and cover art from any player that reports to Windows. Previous, play/pause and next control that player; drag the wave to seek |
+| **System** | CPU, memory, and free space on the system drive |
+| **Battery** | Charge, and whether it is charging, plugged in or on battery. Laptops only |
+| **Notes** | A scratchpad that saves itself |
+| **Day banner** | The weekday in large spaced capitals across the top of the screen |
+
+- **Stays out of the way.** The cards never take focus, never appear in Alt+Tab,
+  and sit behind every app window.
+- **Yours to arrange.** Drag any card; positions snap to a grid and are
+  remembered, on any monitor. Switch off the cards you don't want.
+- **Small.** One exe, no background services, no runtime to install, no admin
+  rights.
+- **Private.** No account and no telemetry. [What leaves your machine](#your-data-and-privacy)
+  fits in three rows.
 
 ---
 
 ## Install
 
-### Easiest: download and double-click
-
-1. Click the green **Code** button above, then **Download ZIP**
-2. Extract it anywhere
-3. Double-click **`install.cmd`**
-
-No commands to type. If Windows shows a "protected your PC" notice, choose
-**More info -> Run anyway** - it appears for any script downloaded from the web.
-
-### One-liner
-
 In PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/jithin-jz/windows-desktop-widgets/main/install.ps1 | iex
+irm https://github.com/jithin-jz/nilam/releases/latest/download/install.ps1 | iex
 ```
 
-Copy that **whole line**. It starts with `irm` and ends with `| iex`; pasting
-only the URL makes PowerShell try to run the address as a command and fail with
-`is not recognized as the name of a cmdlet`.
+Copy that **whole line** - it starts with `irm` and ends with `| iex`.
 
-### From a clone
+It needs **no admin rights**. This is what it does:
+
+```mermaid
+flowchart LR
+    A["One-line install<br>or nilam update"] --> B["Download the source of<br>the latest release"]
+    B --> C{"Checksum matches<br>the release?"}
+    C -- no --> X["Stop.<br>Nothing is installed."]
+    C -- yes --> D["Build it on your PC with the<br>C#35; compiler inside Windows"]
+    D --> E{"Build<br>succeeded?"}
+    E -- no --> Y["Stop. The copy you<br>have keeps running."]
+    E -- yes --> F["Install, add to the Start menu<br>and the Apps list, start Nilam"]
+```
+
+Installs come from **published releases**, never from the development branch,
+and nothing you already have is touched until the new build has succeeded.
+
+<details>
+<summary><b>Other ways to install</b></summary>
+
+**No typing.** Open the
+[latest release](https://github.com/jithin-jz/nilam/releases/latest), download
+`nilam-source.zip`, extract it anywhere and double-click **`install.cmd`**. If
+Windows shows a "protected your PC" notice, choose **More info -> Run anyway**;
+it appears for any script downloaded from the web.
+
+**From a clone.**
 
 ```powershell
-git clone https://github.com/jithin-jz/windows-desktop-widgets.git
-cd windows-desktop-widgets
+git clone https://github.com/jithin-jz/nilam.git
+cd nilam
 .\install.ps1
 ```
 
-The installer checks requirements, builds the exe, optionally asks for your city
-for the weather card, registers a logon entry, and starts the widgets. It needs
-**no admin rights**.
+**Switches**, for either `install.ps1` or `install.cmd`:
 
-Useful switches: `-NoStartup` (don't run at logon), `-NoLaunch` (build only),
-`-InstallDir <path>`.
-
-Remove it with `.\uninstall.ps1` (add `-Purge` to also delete your layout and
-notes).
-
-### Updating
-
-The installer also sets up a `dwx` command (no admin rights needed - it's
-placed in `%LOCALAPPDATA%\Microsoft\WindowsApps`, which is on `PATH` by
-default on Windows 10+):
-
-```powershell
-dwx version   # shows your installed version and the latest one on GitHub
-dwx install   # re-runs the installer - use this for a fresh/repair install
-dwx update    # same as dwx install, named for when you're pulling an update
-```
-
-### Requirements
-
-- Windows 10 or later (the media card uses WinRT media-session APIs)
-- .NET Framework 4.x, which ships with Windows
-
-That's the whole list. There is no .NET SDK, NuGet, Visual Studio or MSBuild
-dependency.
-
----
-
-## How it is built
-
-### One exe, compiled by Windows itself
-
-`build.cmd` invokes `C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe` —
-the C# compiler that ships as part of .NET Framework — and references
-assemblies straight out of the GAC. There is no project file. The whole build is
-one command and takes about a second.
-
-Two details in there are not optional:
-
-- **`/noconfig`.** Without it the compiler applies `csc.rsp`, which
-  auto-references about forty legacy Framework assemblies. At least one now
-  drags in the .NET Standard shim `System.ComponentModel.Primitives.dll`, and
-  that assembly and `System.dll` hold type forwarders pointing at each other.
-  The compiler rejects the cycle (`CS0731`) and then cannot resolve
-  `ISupportInitialize`, which every WPF `Window` implements — so the build fails
-  on the first line that mentions a window. `/noconfig` skips `csc.rsp`, making
-  the curated list in `build.cmd` the complete reference set. Never add one of
-  the small netstandard shims to it.
-- **The individual `.winmd` references.** The media card needs
-  `Windows.Media.Control`, and the unified `Windows.WinMD` facade is too old on
-  many machines to contain it. So the build references
-  `C:\Windows\System32\WinMetadata\*.winmd` directly, and `src\WinRtAsync.cs`
-  hand-rolls the `IAsyncOperation` → `Task` bridge that
-  `System.Runtime.WindowsRuntime` would normally provide.
-
-### The widgets are separate transparent windows
-
-Each card is its own borderless, transparent WPF `Window`, built at runtime by
-`XamlReader.Load` from a markup string in `src\Markup.cs`. Keeping the markup as
-strings avoids needing a XAML compiler in the build.
-
-`src\Native.cs` does the desktop integration through P/Invoke:
-
-- `WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` — the card never takes focus and never
-  appears in Alt+Tab. Mouse clicks still arrive, which is why the media buttons
-  and the wave scrubber work on a window that cannot be focused.
-- `SetWindowPos(..., HWND_BOTTOM, ...)` — parks each card at the bottom of the
-  z-order so every app window draws over it. That is what makes them feel like
-  they live *on* the desktop rather than floating above everything.
-
-A 3-second timer re-parks any unfocused card, because Explorer restarts,
-wallpaper changes and display switches all reshuffle the z-order.
-
-The notes card is the one exception: it is created as interactive so you can
-type in it, and it drops back to the desktop layer as soon as focus leaves.
-
-### Why it stays small
-
-Roughly 54 MB and a fraction of a percent of one CPU core, from three choices:
-
-- **`RenderMode.SoftwareOnly`.** Hardware rendering maps the Intel GPU driver
-  stack into the process — measured at about 81 MB of extra private bytes. Seven
-  near-static cards do not need a GPU. This is the single largest saving
-  available, and it is why adding anything continuously animated to this process
-  is a bad trade.
-- **`/platform:x86`.** Measured 12 MB lower private bytes than x64 for identical
-  behaviour, because pointers and the NGEN images are half the size.
-- **P/Invoke instead of WMI** for CPU, memory, disk and battery
-  (`GetSystemTimes`, `GlobalMemoryStatusEx`, `GetDiskFreeSpaceEx`,
-  `GetSystemPowerStatus`), so nothing wakes the WMI provider host every few
-  seconds.
-
-Timers are deliberately coarse: 1s clock, 2s media, 3s stats, 15min weather.
-
-### Two techniques worth knowing
-
-**Letter tracking.** WPF has no `CharacterSpacing` property — that is UWP only.
-The weekday banner therefore lays out one `TextBlock` per letter with a right
-margin, which is continuous and exact. Weaving spacing characters into the
-string was the first attempt, but it can only step tracking in whole-glyph
-widths and could not hit the target spacing.
-
-**The media progress clock.** A player is allowed to report its position once and
-never refresh it — Spotify stamps `Position = 0` at track start and leaves it
-there for the whole track, relying on `LastUpdatedTime`. So the wave keeps its
-own clock that advances only while playback is `Playing`, re-anchoring whenever
-the player actually reports a changed position. That is correct both for players
-that report live positions and for those that do not, and it makes a pause hold
-the wave still instead of collapsing it to zero or letting it run ahead.
-
-Seeking is gated on `Controls.IsPlaybackPositionEnabled`, which varies by player
-— Chrome reports true, some players report false. The cursor reflects it so a
-dead click is never invited.
-
----
-
-## Layout and settings
-
-Positions, lock state, notes and weather live in
-`%LOCALAPPDATA%\KiroDesktopWidgets\`:
-
-| File | Contents |
+| Switch | Effect |
 |---|---|
-| `layout.json` | Card positions and the lock flag |
-| `notes.txt` | The notes card |
-| `weather.json` | `{ "name": "City", "lat": 0.0, "lon": 0.0 }` |
-| `weather.log` | Appended on a failed weather fetch (network error, bad response) |
+| `-NoStartup` | do not start with Windows |
+| `-NoLaunch` | install without starting the widgets |
+| `-NoPath` | do not put the `nilam` command on `PATH` |
+| `-InstallDir <path>` | install somewhere other than `%LOCALAPPDATA%\Nilam` |
+| `-Ref <tag or branch>` | install a specific release, or a branch |
+| `-SourcePath <path>` | install from a source folder or zip you already have |
 
-Drag a card to move it — positions snap to an 8px grid and save immediately.
-Right-click any card for **Lock positions**, **Reset positions** and **Exit**.
+</details>
 
-Saved positions are absolute points in Windows' virtual desktop space, which
-shifts when a monitor is added, removed or rearranged. On launch, any saved
-position that no longer fits the current screen is pulled back into the
-default grid spot instead of being left off-screen or wherever the shifted
-coordinate space put it; positions that are still valid are left exactly as
-you set them.
-
-Weather uses [Open-Meteo](https://open-meteo.com), which needs no API key.
-A failed refresh doesn't blank the card: it keeps showing the last
-successful reading and retries after 30 seconds (up to 3 times) rather than
-waiting out the normal 15-minute cycle. `weather.log` records what actually
-failed, since a Wi-Fi blip and a real bug both used to just say "unavailable".
+**Requirements:** Windows 10 version 1809 or later, or Windows 11, with
+.NET Framework 4.8 - which ships with Windows. There is no .NET SDK, NuGet,
+Visual Studio or MSBuild dependency.
 
 ---
 
-## The display font
+## Where the cards go
 
-The weekday banner is designed for **Anurati** by Emmeran Richard.
+The cards live one layer above the wallpaper and below everything else:
 
-**It is not included in this repo.** Anurati is licensed for personal use only,
-so bundling it would be redistribution. Download it yourself and drop the `.otf`
-into `fonts\`; the widget loads it *by path*, so it does not need to be
-installed system-wide and needs no admin rights.
+```mermaid
+flowchart TB
+    T["Taskbar and always-on-top windows"]
+    A["Your app windows"]
+    N["Nilam cards"]
+    D["Desktop: wallpaper and icons"]
+    T --- A --- N --- D
+    style N fill:#2a78d6,stroke:#2a78d6,color:#ffffff
+```
 
-Without it the banner falls back to Century Gothic and everything still works —
-it just won't have the cut-away letterforms the tracking was measured against.
+By default they form a block at the right edge of the screen. On a screen too
+short for all four rows, the rows split into two blocks instead of overlapping:
 
-Verify a font is being picked up with:
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/layout-dark.svg">
+    <img src="docs/images/layout-light.svg" width="760"
+         alt="Two default layouts. On a 1920 by 1200 screen at 150 percent the six cards form one column block of four rows at the right edge, with the weekday banner at the top centre. On a 1920 by 1080 screen at 150 percent they form two blocks side by side, below the banner.">
+  </picture>
+</p>
+
+These positions are only the starting point - drag a card anywhere. A card you
+put on a second monitor stays there; one left on a monitor you later unplug comes
+back to its default spot.
+
+---
+
+## Settings
+
+Right-click any card, or click the icon in the notification area.
+
+<p align="center">
+  <img src="docs/images/settings.png" width="420"
+       alt="The Nilam settings window: weather city search with Kozhikode, Kerala, India selected, temperature unit, time format, a checkbox for each card, the idle picture folder, a card opacity slider at 80 percent, and Start with Windows.">
+</p>
+
+| | |
+|---|---|
+| **Weather** | search for your city by name; Celsius, Fahrenheit, or follow your region |
+| **Clock** | 12-hour, 24-hour, or follow your Windows time format |
+| **Cards** | switch any card off; the rest close up the gap |
+| **Media card** | show pictures from a folder while nothing is playing, and which folder |
+| **Appearance** | how opaque the cards are |
+| **Startup** | start with Windows |
+
+The same menu has **Lock positions**, so a stray drag cannot move anything,
+**Reset positions**, and **Exit widgets**. To start again after exiting, find
+*Nilam* in the Start menu.
+
+---
+
+## Light on your machine
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/perf-dark.svg">
+    <img src="docs/images/perf-light.svg" width="760"
+         alt="Idle cost of version 2.0.0 against 1.4.2. Idle CPU: 0.20 percent of one core, down from 2.34 percent, 91 percent lower. Memory: 51 megabytes private, down from 64, 20 percent lower.">
+  </picture>
+</p>
+
+| Idle, nothing playing | 1.4.2 | 2.0.0 |
+|---|---|---|
+| CPU, share of one core | 2.34% | 0.20% |
+| Memory, private bytes | 64 MB | 51 MB |
+
+Measured with both versions running side by side over the same eight seconds, on
+one machine with a 1920x1200 display at 150%. Your numbers will differ; the
+difference between the two is the point.
+
+It stays this small on purpose: software rendering, a 32-bit build, plain Win32
+calls instead of WMI, and no effect that has to be redrawn when nothing changed.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the reasoning and the
+measurements behind each choice.
+
+---
+
+## Updating and uninstalling
 
 ```powershell
-.\check-font.ps1
+nilam version   # your installed version, and the latest release
+nilam update    # install the latest release, if it is newer
+nilam install   # reinstall the latest release regardless
 ```
 
-The family name must be exactly `Anurati`. If a file declares something else,
-the banner silently falls back rather than failing.
+To remove it, use **Settings > Apps > Installed apps > Nilam > Uninstall**, or
+run `uninstall.ps1` from the install folder. Your layout, notes and settings are
+kept unless you add `-Purge`.
+
+**Coming from Desktop Widgets 1.x?** Nilam is the same project under its new
+name. Installing it replaces the old copy and carries your layout, notes and
+weather location over. The `dwx` command is replaced by `nilam`.
 
 ---
 
-## Layout of this repo
+## Your data and privacy
 
-```
-VERSION              current release, compared by `dwx version`
-build.cmd            one-command build, no SDK required
-install.ps1          installer (also works piped from the web); also builds dwx
-uninstall.ps1        removal, keeps settings unless -Purge
-check-font.ps1       reports which font families WPF finds in fonts\
-launcher/
-  DesktopWidgets.vbs starts the exe with no console window; builds it if missing
-cli/
-  Dwx.cs             `dwx version` / `dwx update`, built by cli\build.cmd
-  build.cmd          builds bin\dwx.exe
-fonts/               drop Anurati.otf here (not redistributed)
-src/
-  WidgetApp.cs       app, layout, timers, wave progress, seeking
-  Markup.cs          all widget XAML, as strings
-  Native.cs          P/Invoke: window styles, z-order, stats, media keys
-  MediaMonitor.cs    WinRT media session: metadata, art, timeline, seek
-  WinRtAsync.cs      IAsyncOperation -> Task bridge
-  Stats.cs           CPU, RAM, disk, battery
-  Store.cs           layout / notes / weather persistence
-  Weather.cs         Open-Meteo client
-```
+There is no telemetry and no account. This is everything that leaves your
+machine:
+
+| When | Where it goes | What is sent |
+|---|---|---|
+| Every 15 minutes, once you have picked a city | [Open-Meteo](https://open-meteo.com) | that city's latitude and longitude |
+| When you press Search in Settings | Open-Meteo | the city name you typed |
+| When you install or run `nilam update` | GitHub | an ordinary download request |
+
+Your notes, what you play, your pictures and your system statistics never leave
+the machine. Until you pick a city, the app makes no network requests at all.
+
+Everything it stores is in `%APPDATA%\Nilam`, as plain files you can open:
+`settings.json`, `layout.json`, `notes.txt` and `widgets.log`.
+[PRIVACY.md](PRIVACY.md) has the full list.
+
+---
+
+## The banner font
+
+The weekday banner is set in **Michroma**, which ships with the app under the
+SIL Open Font License.
+
+It was originally designed around **Anurati** by Emmeran Richard. Anurati is
+licensed for personal use only, so it is not - and cannot be - included here. If
+you have your own copy, drop the `.otf` into the `fonts` folder of the install
+and the banner will use it instead. `.\check-font.ps1` reports which one was
+picked up.
+
+---
 
 ## Troubleshooting
 
-**Cards vanished.** Explorer probably restarted. They re-park themselves within
-3 seconds; if not, run the launcher again.
+<details>
+<summary><b>Something is wrong and nothing says why</b></summary>
 
-**Build fails with `CS0731` or `ISupportInitialize`.** `/noconfig` is missing
-from `build.cmd` — see the build notes above.
+Look at `%APPDATA%\Nilam\widgets.log`. In **Settings**, **Open the settings
+folder** takes you there.
+</details>
 
-**Banner shows the wrong font.** Run `check-font.ps1`; the family name must be
-exactly `Anurati`.
+<details>
+<summary><b>The weather card says "Click to set a city"</b></summary>
 
-**Media card says "Nothing playing" while music plays.** The player is not
-reporting to the Windows media session. Check whether the volume flyout shows
-the track — the widget reads the same source.
+Click it, search for your city and save.
+</details>
 
-**Cards partly off-screen on a small display.** The card block is 688px tall;
-on a short work area the last card can sit under the taskbar. Drag it where you
-want it — positions persist.
+<details>
+<summary><b>The weather card says "UPDATED 3 H AGO"</b></summary>
+
+It could not reach Open-Meteo and is showing its last reading. It retries by
+itself, including when the network comes back or the machine wakes.
+</details>
+
+<details>
+<summary><b>The media card is empty while music plays</b></summary>
+
+The player is not reporting to the Windows media session. Check whether the
+volume flyout shows the track - the card reads the same source.
+</details>
+
+<details>
+<summary><b>Cards are not where I left them</b></summary>
+
+If a monitor was unplugged or rearranged, any card left off screen is moved back
+to its default spot. Cards still on a screen are left alone.
+</details>
+
+<details>
+<summary><b>The build fails with <code>CS0731</code> or <code>ISupportInitialize</code></b></summary>
+
+`/noconfig` is missing from `build.cmd` - see
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+</details>
 
 ---
 
-## Licence
+## Building and contributing
+
+Nothing to install: the compiler is already in Windows.
+
+```
+.\build.cmd            builds bin\Nilam.exe
+.\build.cmd tests      builds bin\Tests.exe
+.\bin\Tests.exe        runs the tests
+```
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - how it is put together, and why
+- [CONTRIBUTING.md](CONTRIBUTING.md) - before sending a change
+- [SECURITY.md](SECURITY.md) - reporting a security problem, and the trust model
+- [CHANGELOG.md](CHANGELOG.md) - what changed in each release
+
+---
+
+## Licence and credits
 
 Code is [MIT](LICENSE).
 
-The **Anurati** typeface is not covered by that licence and is not included in
-this repository — it is licensed for personal use only. See
-[the font section](#the-display-font).
+- **Michroma** by The Michroma Project Authors, SIL Open Font License 1.1.
+- **Weather data by [Open-Meteo.com](https://open-meteo.com/)**, CC BY 4.0. Its
+  free API is for non-commercial use.
+- **Anurati** by Emmeran Richard is not included; see [the banner font](#the-banner-font).
+
+Details are in [NOTICE](NOTICE).

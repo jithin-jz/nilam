@@ -1,0 +1,47 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Nilam version
+      description: Shown at the bottom of the Settings window, or by `nilam version`.
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version and build
+      description: Run `winver`.
+      placeholder: "Windows 11 24H2, build 26100"
+    validations:
+      required: true
+  - type: input
+    id: display
+    attributes:
+      label: Displays
+      description: Resolution and scale of each monitor. Layout problems almost always depend on this.
+      placeholder: "1920x1080 at 150%, plus an external 2560x1440 at 100%"
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: >
+        The last lines of `%APPDATA%\Nilam\widgets.log`. In Settings,
+        "Open the settings folder" takes you there. The log holds times and
+        error messages, not your notes.
+      render: text
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Which media player, a screenshot, your Windows region if the problem is about dates or numbers.

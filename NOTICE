@@ -1,0 +1,47 @@
+Nilam
+Copyright (c) 2026 jithin-jz
+
+The source code in this repository is licensed under the MIT License (see
+LICENSE). The items below are not covered by that licence. They are listed
+here, rather than appended to LICENSE, so that the licence file stays the
+unmodified MIT text.
+
+
+Michroma (bundled: fonts/Michroma-Regular.ttf)
+----------------------------------------------
+Copyright 2011 The Michroma Project Authors
+(https://github.com/googlefonts/Michroma-font)
+
+Licensed under the SIL Open Font License, Version 1.1. The full licence text is
+in fonts/Michroma-OFL.txt. The font file is distributed unmodified. It is the
+default face of the weekday banner.
+
+
+Open-Meteo (weather data and city search, fetched at run time)
+--------------------------------------------------------------
+Weather data by Open-Meteo.com - https://open-meteo.com/
+
+The data is offered under the Creative Commons Attribution 4.0 International
+licence (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. No Open-Meteo
+code or data is included in this repository; the app requests it while running
+and shows a credit on the weather card and in the settings window.
+
+Open-Meteo's free API is for non-commercial use. A version of this app that is
+sold, carries advertising or requires a subscription would need one of
+Open-Meteo's commercial plans.
+
+
+Anurati (NOT included)
+----------------------
+Anurati is a typeface by Emmeran Richard. It is licensed for personal use only
+and is deliberately not part of this repository or of any release: bundling it
+would be redistribution, which that licence does not allow. The weekday banner
+will use it if a user places their own copy in the fonts folder. Commercial use
+of Anurati requires the paid release:
+https://www.emmeranrichard.fr/foundry/anurati-pro/
+
+
+Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets (NOT included)
+--------------------------------------------------------------
+These fonts are part of Windows and are used from the system. They are not
+distributed with this software.

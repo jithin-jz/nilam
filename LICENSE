@@ -19,16 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-NOTE ON THE DISPLAY FONT
-
-This licence covers the source code in this repository only. It does not cover
-the Anurati typeface, which is deliberately not included here: Anurati is by
-Emmeran Richard and is licensed for personal use only, so redistributing it
-would not be permitted. Each user downloads it themselves into fonts/. Without
-it the day banner falls back to Century Gothic and the software still works.
-
-Commercial use of Anurati requires the paid release:
-https://www.emmeranrichard.fr/foundry/anurati-pro/

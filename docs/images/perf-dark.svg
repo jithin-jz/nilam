@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="176" viewBox="0 0 760 176" role="img" aria-label="Idle CPU and memory, version 1.4.2 against 2.0.0" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
+  <rect x="0" y="0" width="372" height="176" rx="8" fill="#1a1a19" stroke="#2c2c2a"/>
+  <text x="20" y="30" font-size="13" fill="#c3c2b7">Idle CPU, % of one core</text>
+  <text x="20" y="70" font-size="32" font-weight="600" fill="#f0efec">0.20%</text>
+  <text x="20" y="92" font-size="13" fill="#0ca30c">91% lower than 1.4.2</text>
+  <text x="20" y="128" font-size="12" fill="#c3c2b7">1.4.2</text>
+  <path d="M64 118 h228 a4 4 0 0 1 4 4 v4 a4 4 0 0 1 -4 4 h-228 z" fill="#898781"/>
+  <text x="304" y="128" font-size="12" fill="#f0efec">2.34%</text>
+  <text x="20" y="154" font-size="12" fill="#c3c2b7">2.0.0</text>
+  <path d="M64 144 h16 a4 4 0 0 1 4 4 v4 a4 4 0 0 1 -4 4 h-16 z" fill="#3987e5"/>
+  <text x="92" y="154" font-size="12" fill="#f0efec">0.20%</text>
+  <line x1="64" y1="110" x2="64" y2="164" stroke="#383835" stroke-width="1"/>
+  <rect x="388" y="0" width="372" height="176" rx="8" fill="#1a1a19" stroke="#2c2c2a"/>
+  <text x="408" y="30" font-size="13" fill="#c3c2b7">Memory, MB private</text>
+  <text x="408" y="70" font-size="32" font-weight="600" fill="#f0efec">51 MB</text>
+  <text x="408" y="92" font-size="13" fill="#0ca30c">20% lower than 1.4.2</text>
+  <text x="408" y="128" font-size="12" fill="#c3c2b7">1.4.2</text>
+  <path d="M452 118 h228 a4 4 0 0 1 4 4 v4 a4 4 0 0 1 -4 4 h-228 z" fill="#898781"/>
+  <text x="692" y="128" font-size="12" fill="#f0efec">64 MB</text>
+  <text x="408" y="154" font-size="12" fill="#c3c2b7">2.0.0</text>
+  <path d="M452 144 h181 a4 4 0 0 1 4 4 v4 a4 4 0 0 1 -4 4 h-181 z" fill="#3987e5"/>
+  <text x="645" y="154" font-size="12" fill="#f0efec">51 MB</text>
+  <line x1="452" y1="110" x2="452" y2="164" stroke="#383835" stroke-width="1"/>
+</svg>
