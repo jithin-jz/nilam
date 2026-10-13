@@ -31,7 +31,7 @@ jobs:
   release:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check the tag matches VERSION
         shell: pwsh
@@ -61,9 +61,10 @@ jobs:
           $out = New-Item -ItemType Directory -Force dist
           $tag = $env:GITHUB_REF_NAME
 
-          # The source archive comes straight from the tagged commit, so it is
+          # The source archive comes straight from the tagged commit (HEAD is
+          # the tag this run was started for), so it is
           # exactly what was reviewed - no build output, nothing untracked.
-          git archive --format=zip --output dist/nilam-source.zip $tag
+          git archive --format=zip --output dist/nilam-source.zip HEAD
           if ($LASTEXITCODE) { throw 'git archive failed' }
           $sourceHash = (Get-FileHash dist/nilam-source.zip -Algorithm SHA256).Hash.ToLower()
 
@@ -91,7 +92,7 @@ jobs:
           Get-Content dist/SHA256SUMS.txt
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/install.ps1

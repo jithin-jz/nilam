@@ -18,7 +18,7 @@ jobs:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build the widgets
         shell: cmd
@@ -61,7 +61,7 @@ jobs:
           & (Join-Path $dir 'uninstall.ps1') -InstallDir $dir
           if (Test-Path $dir) { throw 'the uninstaller left the install folder behind' }
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Nilam-${{ github.sha }}
           path: |
