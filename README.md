@@ -65,13 +65,14 @@ It needs **no admin rights**. This is what it does:
 
 ```mermaid
 flowchart LR
-    A["One-line install<br>or nilam update"] --> B["Download the source of<br>the latest release"]
-    B --> C{"Checksum matches<br>the release?"}
-    C -- no --> X["Stop.<br>Nothing is installed."]
-    C -- yes --> D["Build it on your PC with the<br>C#35; compiler inside Windows"]
+    A["Download the latest<br>release's source"] --> C{"Checksum<br>matches?"}
+    C -- no --> X["Stop: nothing<br>is installed"]
+    C -- yes --> D["Build on your PC with<br>the Windows C#35; compiler"]
     D --> E{"Build<br>succeeded?"}
-    E -- no --> Y["Stop. The copy you<br>have keeps running."]
-    E -- yes --> F["Install, add to the Start menu<br>and the Apps list, start Nilam"]
+    E -- no --> Y["Stop: your current<br>copy keeps running"]
+    E -- yes --> F["Install and<br>start Nilam"]
+    F ~~~ P["#160;#160;#160;#160;"]
+    style P fill:none,stroke:none
 ```
 
 Installs come from **published releases**, never from the development branch,
