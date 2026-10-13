@@ -4,22 +4,17 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
-namespace KiroWidgets
+namespace Nilam
 {
     /// <summary>
-    /// Random pictures from Pictures\wallpaper, shown in the media
-    /// card's art tile while nothing is playing. Read-only: files are opened
-    /// for reading and never modified.
+    /// Random pictures from one folder, shown in the media card's art tile while
+    /// nothing is playing. Read-only: files are opened for reading and never
+    /// modified, and nothing leaves the machine. The folder and the on/off
+    /// switch are in the settings window.
     /// </summary>
     internal class PhotoShuffle
     {
         private static readonly string[] Extensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
-
-        // Only this subfolder of Pictures, not the whole library: the rest is
-        // mostly screenshots, which make poor ambient art. Resolved against
-        // the Pictures known folder so a redirected (e.g. OneDrive) library
-        // still works.
-        private const string PhotoFolder = "wallpaper";
 
         // A runaway folder (a synced drive, say) must not turn a scan into a
         // long walk; a few thousand candidates is plenty to pick from.
@@ -29,12 +24,23 @@ namespace KiroWidgets
         // The tile is 96px. Decoding straight to 288px on the short side covers
         // up to 300% scaling, and keeps a 20 MB photo at a few hundred KB in
         // memory instead of the ~48 MB a full-size decode of 12 megapixels costs.
-        private const int DecodeSize = 288;
+        internal const int DecodeSize = 288;
 
+        private readonly string folder;
         private readonly Random rng = new Random();
         private List<string> files = new List<string>();
         private DateTime scannedAt = DateTime.MinValue;
         private string lastPick;
+
+        /// <param name="folder">
+        /// The one folder to draw from. By default this is a subfolder of
+        /// Pictures rather than the whole library: the rest is mostly
+        /// screenshots, which make poor ambient art.
+        /// </param>
+        internal PhotoShuffle(string folder)
+        {
+            this.folder = folder;
+        }
 
         /// <summary>
         /// Scans and decodes on the thread pool; the result is frozen, so the UI
@@ -49,8 +55,7 @@ namespace KiroWidgets
         {
             if (DateTime.UtcNow - scannedAt > RescanAfter)
             {
-                files = Scan(Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), PhotoFolder));
+                files = Scan(folder);
                 scannedAt = DateTime.UtcNow;
             }
 
@@ -95,13 +100,14 @@ namespace KiroWidgets
                     foreach (string sub in Directory.EnumerateDirectories(dir))
                     {
                         // Skip junctions and symlinks, which can loop back on
-                        // themselves or lead somewhere far outside Pictures.
+                        // themselves or lead somewhere far outside the folder.
                         FileAttributes a = File.GetAttributes(sub);
                         if ((a & (FileAttributes.ReparsePoint | FileAttributes.Hidden | FileAttributes.System)) == 0)
                             pending.Push(sub);
                     }
                 }
-                catch { }
+                catch (UnauthorizedAccessException) { }   // a folder we may not read: skip it
+                catch (IOException) { }                   // vanished or unreadable mid-scan: skip it
             }
             return found;
         }
@@ -131,7 +137,12 @@ namespace KiroWidgets
                 bmp.Freeze();
                 return bmp;
             }
-            catch { return null; }
+            catch (Exception)
+            {
+                // Not a picture WPF can decode, or gone since the scan. The
+                // caller drops it from the list and tries another.
+                return null;
+            }
         }
 
         /// <summary>
@@ -168,7 +179,10 @@ namespace KiroWidgets
                     }
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                // No readable header or metadata: decode unrotated, width-pinned.
+            }
         }
     }
 }

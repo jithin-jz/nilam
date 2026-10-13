@@ -1,6 +1,7 @@
 using System;
+using System.IO;
 
-namespace KiroWidgets
+namespace Nilam
 {
     internal class StatsSnapshot
     {
@@ -8,6 +9,8 @@ namespace KiroWidgets
         internal int RamPercent = -1;
         internal double DiskFreeGB = -1;
         internal int BatteryPercent = -1;
+        /// <summary>Mains power is connected. Not the same as charging: a full battery on mains is not.</summary>
+        internal bool OnMains;
         internal bool Charging;
     }
 
@@ -18,6 +21,9 @@ namespace KiroWidgets
     /// </summary>
     internal class Stats
     {
+        // The drive Windows is installed on, which is not always C:.
+        private static readonly string SystemDrive = Path.GetPathRoot(Environment.SystemDirectory);
+
         private long prevIdle;
         private long prevKernel;
         private long prevUser;
@@ -61,18 +67,32 @@ namespace KiroWidgets
 
             // ---- disk
             ulong freeAvail, total, totalFree;
-            if (Native.GetDiskFreeSpaceEx("C:\\", out freeAvail, out total, out totalFree))
+            if (!string.IsNullOrEmpty(SystemDrive) &&
+                Native.GetDiskFreeSpaceEx(SystemDrive, out freeAvail, out total, out totalFree))
+            {
                 s.DiskFreeGB = totalFree / 1024.0 / 1024.0 / 1024.0;
+            }
 
             // ---- battery
             Native.SYSTEM_POWER_STATUS power;
             if (Native.GetSystemPowerStatus(out power) && (power.BatteryFlag & 128) == 0)
             {
                 if (power.BatteryLifePercent <= 100) s.BatteryPercent = power.BatteryLifePercent;
-                s.Charging = power.ACLineStatus == 1;
+                s.OnMains = power.ACLineStatus == 1;
+                // BatteryFlag bit 3 is "charging". ACLineStatus alone only says
+                // the charger is plugged in, which is also true at 100%.
+                s.Charging = (power.BatteryFlag & 8) != 0;
             }
 
             return s;
+        }
+
+        /// <summary>What to say under the battery percentage.</summary>
+        internal static string BatteryStatus(StatsSnapshot s)
+        {
+            if (s.Charging) return "Charging";
+            if (s.OnMains) return s.BatteryPercent >= 100 ? "Fully charged" : "Plugged in";
+            return "On battery";
         }
 
         private static double Clamp(double v, double lo, double hi)

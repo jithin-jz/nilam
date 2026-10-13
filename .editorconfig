@@ -1,0 +1,26 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cmd,bat,ps1,psd1}]
+end_of_line = crlf
+
+[*.cs]
+# The app is compiled by the C# 5 compiler that ships inside Windows, so newer
+# syntax (?. $"" nameof => members, out var, pattern matching) will not build.
+csharp_new_line_before_open_brace = all
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_elsewhere = false:suggestion
+dotnet_sort_system_directives_first = true

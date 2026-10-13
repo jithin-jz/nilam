@@ -1,18 +1,23 @@
 # Build output. Rebuilt from src\ by build.cmd in about a second.
 bin/
 
-# Fonts are deliberately NOT redistributed.
+# Fonts are not redistributed, with one exception.
 #
-# The day banner is designed for Anurati (by Emmeran Richard), which is licensed
-# for personal use only. Bundling it in a public repo would be redistribution,
-# which that licence does not allow. Each user downloads it themselves and drops
-# it into fonts\ - see fonts\README.txt. Without it the banner falls back to
-# Century Gothic and everything still works.
+# The day banner prefers Anurati (by Emmeran Richard) when it is present. That
+# face is licensed for personal use only, so it must never be committed: each
+# person who wants it downloads it themselves and drops it into fonts\ - see
+# fonts\README.txt.
+#
+# Michroma is the exception. It is under the SIL Open Font License, which does
+# allow bundling, and it ships as the default so the banner looks the same on
+# every machine. Its licence text is fonts\Michroma-OFL.txt.
 fonts/*.otf
 fonts/*.ttf
 fonts/*.woff
 fonts/*.woff2
+!fonts/Michroma-Regular.ttf
 
 # Local scratch
 *.log
 *.bak
+*.tmp

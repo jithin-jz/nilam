@@ -1,38 +1,109 @@
-namespace KiroWidgets
+using System;
+using System.Globalization;
+
+namespace Nilam
 {
     /// <summary>
+    /// The colours that depend on a setting or on Windows itself, substituted
+    /// into the markup before it is parsed.
+    /// </summary>
+    internal class Theme
+    {
+        internal string CardBackground;
+        internal string CardBorder;
+        internal string Caption;
+        internal bool HighContrast;
+
+        internal static Theme From(Settings settings, bool highContrast)
+        {
+            Theme t = new Theme();
+            t.HighContrast = highContrast;
+            if (highContrast)
+            {
+                // Windows contrast themes ask for exactly this: nothing
+                // translucent, nothing dim.
+                t.CardBackground = "#FF000000";
+                t.CardBorder = "#FFFFFFFF";
+                t.Caption = "#FFFFFFFF";
+                return t;
+            }
+
+            int alpha = (int)Math.Round(settings.CardOpacity * 255 / 100.0);
+            if (alpha < 0) alpha = 0;
+            if (alpha > 255) alpha = 255;
+            t.CardBackground = "#" + alpha.ToString("X2", CultureInfo.InvariantCulture) + "121215";
+            t.CardBorder = "#2AFFFFFF";
+            t.Caption = "#8CFFFFFF";
+            return t;
+        }
+    }
+
+    /// <summary>
     /// The widget markup, kept as strings and parsed at runtime by XamlReader so
-    /// the visual design stays byte-identical to the original script. __SMALL__
-    /// and __MEDIUM__ are substituted with the macOS card sizes before parsing.
+    /// the build needs no XAML compiler. The __NAME__ tokens are substituted by
+    /// Window() before parsing. Only values this file controls are ever
+    /// substituted - never a file path or anything else from the machine, which
+    /// is how an install folder containing "&amp;" used to break the parse.
     /// </summary>
     internal static class Markup
     {
+        // Progress wave on the media card. 300 is the card's inner width: a
+        // medium card is 336 wide with 18px padding each side.
+        internal const double WaveWidth = 300;
+        internal const double WaveHeight = 18;
+
+        /// <summary>Wraps a card body in its window and fills in the tokens.</summary>
+        internal static string Window(string body, Theme theme)
+        {
+            string xaml = WindowHead + Styles + body + "</Window>";
+            return xaml.Replace("__SMALL__", Number(LayoutPlanner.Unit))
+                       .Replace("__MEDIUM__", Number(LayoutPlanner.BlockWidth))
+                       .Replace("__BANNERW__", Number(LayoutPlanner.BannerWidth))
+                       .Replace("__BANNERH__", Number(LayoutPlanner.BannerHeight))
+                       .Replace("__WAVEW__", Number(WaveWidth))
+                       .Replace("__WAVEH__", Number(WaveHeight))
+                       .Replace("__CARDBG__", theme.CardBackground)
+                       .Replace("__CARDBORDER__", theme.CardBorder)
+                       .Replace("__CAPTION__", theme.Caption);
+        }
+
+        private static string Number(double value)
+        {
+            return value.ToString(CultureInfo.InvariantCulture);
+        }
+
         internal const string WindowHead =
 @"<Window xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
         xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
-        Title=""KiroDesktopWidgets""
+        Title=""Nilam""
         WindowStyle=""None"" AllowsTransparency=""True"" Background=""Transparent""
         ShowInTaskbar=""False"" ResizeMode=""NoResize"" SizeToContent=""WidthAndHeight""
         ShowActivated=""False"" Topmost=""False"">";
 
+        // There is deliberately no DropShadowEffect on the card.
+        //
+        // The original style had one (28px blur, 6px drop). Each card's window
+        // is exactly the size of the card, so the shadow was clipped at the
+        // window's edge and never appeared around it - but WPF still re-ran the
+        // blur over the whole card, on the CPU, every time anything inside
+        // changed: once a second while a track played. What the shadow did do
+        // was show through the translucent card from underneath, making it read
+        // as 80% opaque instead of the 71% written here. The background below
+        // is that measured result as a flat colour, so the cards look the same
+        // and cost nothing to repaint.
         internal const string Styles =
 @"  <Window.Resources>
     <Style x:Key=""Card"" TargetType=""Border"">
       <Setter Property=""CornerRadius"" Value=""20""/>
       <Setter Property=""Padding"" Value=""22,18,22,18""/>
       <Setter Property=""BorderThickness"" Value=""1""/>
-      <Setter Property=""BorderBrush"" Value=""#2AFFFFFF""/>
-      <Setter Property=""Background"" Value=""#B5141418""/>
-      <Setter Property=""Effect"">
-        <Setter.Value>
-          <DropShadowEffect BlurRadius=""28"" ShadowDepth=""6"" Direction=""270"" Opacity=""0.45"" Color=""#FF000000""/>
-        </Setter.Value>
-      </Setter>
+      <Setter Property=""BorderBrush"" Value=""__CARDBORDER__""/>
+      <Setter Property=""Background"" Value=""__CARDBG__""/>
     </Style>
     <Style x:Key=""Cap"" TargetType=""TextBlock"">
       <Setter Property=""FontFamily"" Value=""Segoe UI""/>
       <Setter Property=""FontSize"" Value=""11""/>
-      <Setter Property=""Foreground"" Value=""#8CFFFFFF""/>
+      <Setter Property=""Foreground"" Value=""__CAPTION__""/>
       <Setter Property=""FontWeight"" Value=""SemiBold""/>
     </Style>
     <Style x:Key=""Val"" TargetType=""TextBlock"">
@@ -71,25 +142,16 @@ namespace KiroWidgets
 
         /// <summary>
         /// The day banner: a bare, card-less line of text parked at the top centre
-        /// of the screen. Unlike the six cards it has no Card background, so only
-        /// the letters sit on the wallpaper. __BANNERW__ is substituted with a fixed
-        /// width because the Window uses SizeToContent, and a known width is what
-        /// makes the top-centre position computable before the window is shown.
+        /// of the screen. Unlike the cards it has no Card background, so only the
+        /// letters sit on the wallpaper. The size is fixed because the Window uses
+        /// SizeToContent, and a known size is what makes the top-centre position
+        /// computable before the window is shown. The letters, and their font,
+        /// are added in code (DayBanner.cs).
         /// The drop shadow is not decoration - it keeps the thin strokes legible
-        /// over a light wallpaper.
+        /// over a light wallpaper. It is static: the word changes once a day.
         /// </summary>
         internal const string DayBanner =
-@"  <Border Width=""__BANNERW__"" Height=""92"" Background=""Transparent"">
-    <Border.Resources>
-      <!-- Implicit style, so it reaches every letter TextBlock the code adds to
-           BannerRow without the code having to know about fonts or colours. -->
-      <Style TargetType=""TextBlock"">
-        <Setter Property=""FontFamily"" Value=""__BANNERFONT__""/>
-        <Setter Property=""FontSize"" Value=""__BANNERSIZE__""/>
-        <Setter Property=""FontWeight"" Value=""__BANNERWEIGHT__""/>
-        <Setter Property=""Foreground"" Value=""#F2FFFFFF""/>
-      </Style>
-    </Border.Resources>
+@"  <Border Width=""__BANNERW__"" Height=""__BANNERH__"" Background=""Transparent"">
     <StackPanel x:Name=""BannerRow"" Orientation=""Horizontal""
                 HorizontalAlignment=""Center"" VerticalAlignment=""Center"">
       <!-- One shadow for the whole word rather than one per letter: it keeps the
@@ -106,7 +168,7 @@ namespace KiroWidgets
     <StackPanel VerticalAlignment=""Center"">
       <TextBlock x:Name=""TimeText"" Text=""00:00"" FontFamily=""Segoe UI"" FontSize=""42""
                  FontWeight=""Thin"" Foreground=""White""/>
-      <TextBlock x:Name=""AmPmText"" Text=""AM"" Style=""{StaticResource Cap}"" Margin=""2,-2,0,0""/>
+      <TextBlock x:Name=""AmPmText"" Text="""" Style=""{StaticResource Cap}"" Margin=""2,-2,0,0""/>
       <TextBlock x:Name=""DayText"" Text=""Day"" FontFamily=""Segoe UI"" FontSize=""14""
                  FontWeight=""Light"" Foreground=""#E8FFFFFF"" Margin=""2,14,0,0""/>
       <TextBlock x:Name=""DateText"" Text=""Date"" Style=""{StaticResource Cap}"" Margin=""2,2,0,0""/>
@@ -115,19 +177,29 @@ namespace KiroWidgets
 
         internal const string Weather =
 @"  <Border Style=""{StaticResource Card}"" Width=""__SMALL__"" Height=""__SMALL__"" Padding=""18,16,18,16"">
-    <StackPanel>
-      <TextBlock x:Name=""WxPlace"" Text=""WEATHER"" Style=""{StaticResource Cap}""
-                 TextTrimming=""CharacterEllipsis""/>
-      <StackPanel Orientation=""Horizontal"" Margin=""0,8,0,0"">
-        <TextBlock x:Name=""WxTemp"" Text=""--"" FontFamily=""Segoe UI"" FontSize=""38""
-                   FontWeight=""Thin"" Foreground=""White""/>
-        <TextBlock x:Name=""WxIcon"" Text=""&#xE753;"" FontFamily=""Segoe Fluent Icons, Segoe MDL2 Assets""
-                   FontSize=""22"" Foreground=""#E0FFFFFF"" VerticalAlignment=""Center"" Margin=""8,4,0,0""/>
+    <Grid>
+      <StackPanel>
+        <TextBlock x:Name=""WxPlace"" Text=""WEATHER"" Style=""{StaticResource Cap}""
+                   TextTrimming=""CharacterEllipsis""/>
+        <StackPanel Orientation=""Horizontal"" Margin=""0,8,0,0"">
+          <TextBlock x:Name=""WxTemp"" Text=""--"" FontFamily=""Segoe UI"" FontSize=""38""
+                     FontWeight=""Thin"" Foreground=""White""/>
+          <TextBlock x:Name=""WxIcon"" Text=""&#xE753;"" FontFamily=""Segoe Fluent Icons, Segoe MDL2 Assets""
+                     FontSize=""22"" Foreground=""#E0FFFFFF"" VerticalAlignment=""Center"" Margin=""8,4,0,0""/>
+        </StackPanel>
+        <TextBlock x:Name=""WxDesc"" Text="""" Style=""{StaticResource Val}"" FontSize=""12""
+                   Foreground=""#E0FFFFFF"" TextTrimming=""CharacterEllipsis"" Margin=""1,2,0,0""/>
+        <TextBlock x:Name=""WxRange"" Text="""" Style=""{StaticResource Cap}"" Margin=""1,10,0,0""/>
       </StackPanel>
-      <TextBlock x:Name=""WxDesc"" Text=""Not set"" Style=""{StaticResource Val}"" FontSize=""12""
-                 Foreground=""#E0FFFFFF"" TextTrimming=""CharacterEllipsis"" Margin=""1,2,0,0""/>
-      <TextBlock x:Name=""WxRange"" Text="""" Style=""{StaticResource Cap}"" Margin=""1,10,0,0""/>
-    </StackPanel>
+      <!-- Open-Meteo's data is CC BY 4.0 and its terms ask for a link next to
+           wherever the data is shown. This sits in the card's bottom padding
+           via a negative margin, so it claims no layout height. -->
+      <TextBlock x:Name=""WxCredit"" Text=""Open-Meteo"" FontFamily=""Segoe UI"" FontSize=""9""
+                 Foreground=""__CAPTION__"" HorizontalAlignment=""Right"" VerticalAlignment=""Bottom""
+                 Margin=""0,0,-4,-10"" Cursor=""Hand"" Background=""Transparent""
+                 ToolTip=""Weather data by Open-Meteo.com""
+                 AutomationProperties.Name=""Weather data by Open-Meteo.com""/>
+    </Grid>
   </Border>";
 
         internal const string Media =
@@ -153,11 +225,11 @@ namespace KiroWidgets
                ramp - aqua, sky, lavender, pink - held in the same lightness band
                as the CPU, RAM and battery bars, so the whole app reads as one
                palette rather than four unrelated accents.
- Each bar is laid out at full
-               height once and squashed by a ScaleTransform, rather than having
-               its Height animated: a transform is applied on the render thread,
-               while four animated Heights would re-run a layout pass on this
-               panel every frame for the whole time a track plays. -->
+               Each bar is laid out at full height once and squashed by a
+               ScaleTransform, rather than having its Height animated: a
+               transform is applied on the render thread, while four animated
+               Heights would re-run a layout pass on this panel every frame for
+               the whole time a track plays. -->
           <StackPanel x:Name=""ArtBeat"" Orientation=""Horizontal"" Height=""36""
                       HorizontalAlignment=""Center"" VerticalAlignment=""Center"">
             <Border x:Name=""Beat1"" Width=""6"" Height=""36"" CornerRadius=""3"" Background=""#FF8FE8D8""
@@ -180,14 +252,19 @@ namespace KiroWidgets
         </Border>
         <StackPanel Grid.Column=""1"" VerticalAlignment=""Center"">
           <TextBlock Text=""NOW PLAYING"" Style=""{StaticResource Cap}"" Margin=""0,0,0,6""/>
-          <TextBlock x:Name=""MediaTitle"" Text=""Nothing playing"" FontFamily=""Segoe UI"" FontSize=""14""
+          <TextBlock x:Name=""MediaTitle"" Text="""" FontFamily=""Segoe UI"" FontSize=""14""
                      Foreground=""#F2FFFFFF"" MaxWidth=""176"" TextTrimming=""CharacterEllipsis""/>
           <TextBlock x:Name=""MediaArtist"" Text="""" Style=""{StaticResource Val}"" FontSize=""11""
                      Foreground=""#8CFFFFFF"" MaxWidth=""176"" TextTrimming=""CharacterEllipsis"" Margin=""0,3,0,0""/>
+          <!-- The buttons' content is an icon-font glyph, which a screen reader
+               cannot read; AutomationProperties.Name is what it announces. -->
           <StackPanel Orientation=""Horizontal"" HorizontalAlignment=""Left"" Margin=""-10,8,0,0"">
-            <Button x:Name=""BtnPrev"" Style=""{StaticResource GlyphBtn}"" Content=""&#xE892;""/>
-            <Button x:Name=""BtnPlay"" Style=""{StaticResource GlyphBtn}"" Content=""&#xE768;"" FontSize=""17""/>
-            <Button x:Name=""BtnNext"" Style=""{StaticResource GlyphBtn}"" Content=""&#xE893;""/>
+            <Button x:Name=""BtnPrev"" Style=""{StaticResource GlyphBtn}"" Content=""&#xE892;""
+                    AutomationProperties.Name=""Previous track""/>
+            <Button x:Name=""BtnPlay"" Style=""{StaticResource GlyphBtn}"" Content=""&#xE768;"" FontSize=""17""
+                    AutomationProperties.Name=""Play""/>
+            <Button x:Name=""BtnNext"" Style=""{StaticResource GlyphBtn}"" Content=""&#xE893;""
+                    AutomationProperties.Name=""Next track""/>
           </StackPanel>
         </StackPanel>
       </Grid>
@@ -201,7 +278,8 @@ namespace KiroWidgets
            gives the whole strip a hit area for seeking. -->
       <Grid x:Name=""WaveHost"" Width=""__WAVEW__"" Height=""__WAVEH__""
             HorizontalAlignment=""Center"" VerticalAlignment=""Bottom""
-            Margin=""0,0,0,-6"" Background=""Transparent"">
+            Margin=""0,0,0,-6"" Background=""Transparent""
+            AutomationProperties.Name=""Track position"">
         <Path x:Name=""WaveDim"" Stroke=""#33FFFFFF"" StrokeThickness=""1.6""
               StrokeStartLineCap=""Round"" StrokeEndLineCap=""Round""/>
         <!-- The lit wave carries the whole white-to-sky-blue ramp across its
@@ -252,7 +330,7 @@ namespace KiroWidgets
       <TextBox x:Name=""NotesBox"" Height=""96"" Background=""Transparent"" BorderThickness=""0""
                Foreground=""#F2FFFFFF"" FontFamily=""Segoe UI"" FontSize=""12""
                TextWrapping=""Wrap"" AcceptsReturn=""True"" VerticalScrollBarVisibility=""Auto""
-               CaretBrush=""White"" SelectionOpacity=""0.3""/>
+               CaretBrush=""White"" SelectionOpacity=""0.3"" AutomationProperties.Name=""Notes""/>
     </StackPanel>
   </Border>";
 

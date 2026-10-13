@@ -1,0 +1,20 @@
+# Normalise line endings in the repository, and pin the ones that matter on disk.
+* text=auto
+
+# Windows script hosts read these; keep them CRLF in every checkout and in the
+# zip GitHub generates, whatever a contributor's core.autocrlf says.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.psd1 text eol=crlf
+
+*.cs  text diff=csharp
+*.md  text
+*.yml text
+*.txt text
+
+*.ico binary
+*.ttf binary
+*.otf binary
+*.png binary
+*.gif binary

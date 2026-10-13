@@ -1,9 +1,10 @@
 using System;
 using System.Threading.Tasks;
+using Windows.Foundation;
 using Windows.Media.Control;
 using Windows.Storage.Streams;
 
-namespace KiroWidgets
+namespace Nilam
 {
     internal class MediaSnapshot
     {
@@ -44,8 +45,9 @@ namespace KiroWidgets
     }
 
     /// <summary>
-    /// Reads the system media transport controls, the same source the Windows
-    /// volume flyout uses, so it works for any player that reports to Windows.
+    /// Reads and drives the system media transport controls, the same source the
+    /// Windows volume flyout uses, so it works for any player that reports to
+    /// Windows.
     /// </summary>
     internal class MediaMonitor
     {
@@ -53,6 +55,7 @@ namespace KiroWidgets
 
         private GlobalSystemMediaTransportControlsSessionManager manager;
         private string lastTrackKey = "";
+        private bool failing;
 
         // Browsers publish their own app icon the instant playback starts and
         // the real cover a beat later, so a single read per track latches the
@@ -84,6 +87,7 @@ namespace KiroWidgets
                 if (session == null)
                 {
                     lastTrackKey = "";
+                    failing = false;
                     return snap;   // HasSession stays false
                 }
 
@@ -149,12 +153,23 @@ namespace KiroWidgets
                         }
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // No timeline for this player; the wave simply stays unfilled.
+                }
+
+                failing = false;
             }
-            catch
+            catch (Exception ex)
             {
-                // A player closing mid-call invalidates the manager; rebuild next tick.
+                // A player closing mid-call invalidates the manager; rebuild next
+                // tick. Forget the track too: the card may fall back to its idle
+                // picture on this snapshot, and without a fresh settle window the
+                // cover would not be sent again for the rest of the song.
                 manager = null;
+                lastTrackKey = "";
+                if (!failing) Log.Warn("media", Log.Describe(ex));
+                failing = true;     // one line per run of failures, not one per poll
             }
             return snap;
         }
@@ -164,17 +179,47 @@ namespace KiroWidgets
         /// player refuses or advertises no seek support, so the caller can leave
         /// the wave where the player actually is.
         /// </summary>
-        internal async Task<bool> SeekAsync(TimeSpan position)
+        internal Task<bool> SeekAsync(TimeSpan position)
+        {
+            return Command(delegate(GlobalSystemMediaTransportControlsSession s)
+            {
+                return s.TryChangePlaybackPositionAsync(position.Ticks);
+            });
+        }
+
+        // The transport buttons go to the session shown on the card. False means
+        // there was no session or it refused, and the caller falls back to a
+        // media key.
+        internal Task<bool> TogglePlayPauseAsync()
+        {
+            return Command(delegate(GlobalSystemMediaTransportControlsSession s) { return s.TryTogglePlayPauseAsync(); });
+        }
+
+        internal Task<bool> NextAsync()
+        {
+            return Command(delegate(GlobalSystemMediaTransportControlsSession s) { return s.TrySkipNextAsync(); });
+        }
+
+        internal Task<bool> PreviousAsync()
+        {
+            return Command(delegate(GlobalSystemMediaTransportControlsSession s) { return s.TrySkipPreviousAsync(); });
+        }
+
+        private async Task<bool> Command(
+            Func<GlobalSystemMediaTransportControlsSession, IAsyncOperation<bool>> send)
         {
             try
             {
                 if (manager == null) return false;
                 GlobalSystemMediaTransportControlsSession session = manager.GetCurrentSession();
                 if (session == null) return false;
-                return await WinRtAsync.ToTask(
-                    session.TryChangePlaybackPositionAsync(position.Ticks));
+                return await WinRtAsync.ToTask(send(session));
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                Log.Warn("media", Log.Describe(ex));
+                return false;
+            }
         }
 
         /// <summary>
@@ -227,11 +272,18 @@ namespace KiroWidgets
                 reader.ReadBytes(bytes);
                 return bytes;
             }
-            catch { return null; }
+            catch (Exception)
+            {
+                // Art is decoration: a cover that cannot be read is the same as
+                // a track that has none.
+                return null;
+            }
             finally
             {
-                try { if (reader != null) reader.Dispose(); } catch { }
-                try { if (stream != null) stream.Dispose(); } catch { }
+                // Disposing a WinRT stream whose player has just exited can
+                // throw; there is nothing useful to do about it here.
+                try { if (reader != null) reader.Dispose(); } catch (Exception) { }
+                try { if (stream != null) stream.Dispose(); } catch (Exception) { }
             }
         }
     }
