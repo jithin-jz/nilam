@@ -1,0 +1,70 @@
+name: CI
+
+# Builds with the same in-box .NET Framework compiler a user's machine has, runs
+# the tests, and lints the PowerShell. Nothing is installed to do the build.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # A pull request from a branch of this repository has already been built by
+    # the push that created it; build again only for pull requests from forks.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the widgets
+        shell: cmd
+        run: .\build.cmd
+
+      - name: Build nilam
+        shell: cmd
+        run: .\cli\build.cmd
+
+      - name: Build and run the tests
+        shell: cmd
+        run: |
+          call .\build.cmd tests || exit /b 1
+          .\bin\Tests.exe
+
+      - name: Lint the PowerShell scripts
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          $found = Invoke-ScriptAnalyzer -Path . -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
+          $found | Format-Table -AutoSize RuleName, Severity, ScriptName, Line, Message
+          if ($found) { throw "$(@($found).Count) PSScriptAnalyzer finding(s)" }
+
+      - name: Install, check and uninstall
+        shell: pwsh
+        run: |
+          # The installer end to end, into a scratch folder whose name has a
+          # space and an "&" in it - the kind of path that used to break both
+          # the build script and the app's start-up.
+          $dir = Join-Path $env:RUNNER_TEMP 'R&D apps\Nilam'
+          ./install.ps1 -InstallDir $dir -NoStartup -NoPath -NoLaunch
+          if ($LASTEXITCODE) { throw "install.ps1 exited with $LASTEXITCODE" }
+          $exe = Join-Path $dir 'bin\Nilam.exe'
+          if (-not (Test-Path $exe)) { throw 'the installer produced no exe' }
+          $want = (Get-Content VERSION -TotalCount 1).Trim()
+          $got = (Get-Item $exe).VersionInfo.ProductVersion
+          if ($got -ne $want) { throw "the exe reports $got but VERSION says $want" }
+
+          & (Join-Path $dir 'uninstall.ps1') -InstallDir $dir
+          if (Test-Path $dir) { throw 'the uninstaller left the install folder behind' }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nilam-${{ github.sha }}
+          path: |
+            bin/Nilam.exe
+            bin/cli/nilam.exe
+          if-no-files-found: error

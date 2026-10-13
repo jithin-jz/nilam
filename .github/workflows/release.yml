@@ -1,0 +1,120 @@
+name: Release
+
+# Runs when a version tag is pushed:
+#
+#     git tag v2.0.0
+#     git push origin v2.0.0
+#
+# It refuses to release unless the tag matches VERSION, the build is clean and
+# the tests pass. Then it publishes a GitHub Release holding:
+#
+#   install.ps1                       the installer, stamped with this tag and
+#                                     the checksum of the source it will build
+#   nilam-source.zip        exactly the files of this tag
+#   Nilam-<ver>-win-x86.zip  the built exes, for anyone who would
+#                                     rather not compile
+#   SHA256SUMS.txt                    checksums of the three files above
+#
+# The README's one-line install and `nilam update` both fetch from
+# releases/latest, so a push to main is no longer what reaches users - a tag is.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write         # create the release
+  id-token: write         # build provenance attestation
+  attestations: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches VERSION
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION -TotalCount 1).Trim()
+          if ("v$version" -ne $env:GITHUB_REF_NAME) {
+            throw "Tag $env:GITHUB_REF_NAME does not match VERSION ($version). Bump VERSION, commit, and tag that commit."
+          }
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "VERSION must be three numbers, such as 2.0.0 (got '$version')." }
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Build
+        shell: cmd
+        run: |
+          call .\build.cmd || exit /b 1
+          call .\cli\build.cmd || exit /b 1
+
+      - name: Test
+        shell: cmd
+        run: |
+          call .\build.cmd tests || exit /b 1
+          .\bin\Tests.exe
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $out = New-Item -ItemType Directory -Force dist
+          $tag = $env:GITHUB_REF_NAME
+
+          # The source archive comes straight from the tagged commit, so it is
+          # exactly what was reviewed - no build output, nothing untracked.
+          git archive --format=zip --output dist/nilam-source.zip $tag
+          if ($LASTEXITCODE) { throw 'git archive failed' }
+          $sourceHash = (Get-FileHash dist/nilam-source.zip -Algorithm SHA256).Hash.ToLower()
+
+          # Stamp the installer with this release and that checksum. From then
+          # on the installer a user downloaded will only build this archive.
+          $installer = Get-Content install.ps1 -Raw
+          $stamped = $installer.Replace("`$ReleaseTag = ''", "`$ReleaseTag = '$tag'").Replace("`$ReleaseSourceSha256 = ''", "`$ReleaseSourceSha256 = '$sourceHash'")
+          if ($stamped -eq $installer -or $stamped -notmatch [regex]::Escape($sourceHash)) { throw 'could not stamp install.ps1 - have the two placeholder lines changed?' }
+          [IO.File]::WriteAllText((Join-Path $out 'install.ps1'), $stamped, (New-Object Text.UTF8Encoding $false))
+
+          # The portable zip: the exe expects fonts\ beside bin\. nilam is left
+          # out on purpose - it manages an installed copy, and run from here it
+          # would turn the portable folder into one.
+          $stage = New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP 'portable')
+          New-Item -ItemType Directory -Force (Join-Path $stage 'bin'), (Join-Path $stage 'fonts') | Out-Null
+          Copy-Item bin/Nilam.exe (Join-Path $stage 'bin')
+          Copy-Item fonts/Michroma-Regular.ttf, fonts/Michroma-OFL.txt, fonts/README.txt (Join-Path $stage 'fonts')
+          Copy-Item README.md, LICENSE, NOTICE, VERSION $stage
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath "dist/Nilam-$env:VERSION-win-x86.zip"
+
+          $lines = Get-ChildItem dist -File | Sort-Object Name | ForEach-Object {
+            '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
+          }
+          [IO.File]::WriteAllLines((Join-Path $out 'SHA256SUMS.txt'), $lines)
+          Get-Content dist/SHA256SUMS.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/install.ps1
+            dist/nilam-source.zip
+            dist/Nilam-*-win-x86.zip
+
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The notes are this version's section of CHANGELOG.md.
+          $notes = @()
+          $inside = $false
+          foreach ($line in Get-Content CHANGELOG.md) {
+            if ($line -match '^## ') {
+              if ($inside) { break }
+              $inside = $line -match [regex]::Escape("[$env:VERSION]")
+              continue
+            }
+            if ($inside) { $notes += $line }
+          }
+          if (-not ($notes -join '').Trim()) { throw "CHANGELOG.md has no section for $env:VERSION." }
+          $notes | Set-Content notes.md -Encoding utf8
+          gh release create $env:GITHUB_REF_NAME (Get-ChildItem dist -File).FullName --title "Nilam $env:VERSION" --notes-file notes.md --verify-tag
+          if ($LASTEXITCODE) { throw 'gh release create failed' }
