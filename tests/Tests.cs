@@ -594,6 +594,87 @@ namespace Nilam.Tests
         }
     }
 
+    internal static class BrightnessTests
+    {
+        private sealed class FakeDisplay : BrightnessDisplay
+        {
+            internal readonly List<int> Applied = new List<int>();
+            internal bool Released;
+            internal override void Apply(int percent) { Applied.Add(percent); }
+            public override void Dispose() { Released = true; }
+        }
+
+        private static void DdcValuesBecomePercentagesAndBack()
+        {
+            Check.Equal(25, BrightnessMath.ToPercent(25, 100), "a monitor scaled 0 to 100");
+            Check.Equal(50, BrightnessMath.ToPercent(32, 64), "a shorter scale");
+            Check.Equal(0, BrightnessMath.ToPercent(10, 0), "no scale at all");
+            Check.Equal(100, BrightnessMath.ToPercent(120, 100), "never past 100");
+            Check.Equal(32u, BrightnessMath.ToLevel(50, 64), "percent to a shorter scale");
+            Check.Equal(100u, BrightnessMath.ToLevel(250, 100), "clamped high");
+            Check.Equal(0u, BrightnessMath.ToLevel(-4, 100), "clamped low");
+        }
+
+        private static void APanelGetsItsNearestSupportedLevel()
+        {
+            byte[] steps = { 0, 25, 50, 75, 100 };
+            Check.Equal((byte)50, BrightnessMath.Nearest(steps, 55), "rounds down");
+            Check.Equal((byte)75, BrightnessMath.Nearest(steps, 70), "rounds up");
+            Check.Equal((byte)37, BrightnessMath.Nearest(null, 37), "no list, so the percentage itself");
+            Check.Equal((byte)100, BrightnessMath.Nearest(new byte[0], 300), "empty list, clamped");
+        }
+
+        private static void BothSpellingsOfAMonitorMatch()
+        {
+            string wmi = @"DISPLAY\LEN68F1\4&3adeb2d7&0&UID4145_0";
+            string api = @"\\?\DISPLAY#LEN68F1#4&3adeb2d7&0&UID4145#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}";
+            Check.Equal(BrightnessMath.InstanceKey(wmi), BrightnessMath.InstanceKey(api), "same monitor");
+            Check.Equal(@"LEN68F1\4&3ADEB2D7&0&UID4145", BrightnessMath.InstanceKey(wmi), "the shared form");
+            Check.Equal("", BrightnessMath.InstanceKey(null), "null");
+            Check.Equal("", BrightnessMath.InstanceKey(@"\\.\DISPLAY1"), "a device name is not an instance path");
+        }
+
+        private static void DisplayNumbersComeFromTheDeviceName()
+        {
+            Check.Equal(2, Native.DisplayNumber(@"\\.\DISPLAY2"), "DISPLAY2");
+            Check.Equal(12, Native.DisplayNumber(@"\\.\DISPLAY12"), "two digits");
+            Check.Equal(0, Native.DisplayNumber(@"\\.\DISPLAY"), "no number");
+            Check.Equal(0, Native.DisplayNumber(null), "null");
+        }
+
+        private static void MonitorNamesStopAtThePadding()
+        {
+            Check.Equal("LEN", BrightnessMath.DecodeName(new ushort[] { 76, 69, 78, 0, 0, 0 }), "padded");
+            Check.Equal("", BrightnessMath.DecodeName(null), "null");
+        }
+
+        private static void ADragOnlySendsTheNewestValue()
+        {
+            Action drain = null;
+            BrightnessQueue queue = new BrightnessQueue(delegate(Action work) { drain = work; });
+            FakeDisplay display = new FakeDisplay();
+            queue.Set(display, 10);
+            queue.Set(display, 20);
+            queue.Set(display, 30);
+            drain();
+            Check.Equal(1, display.Applied.Count, "one change reaches the monitor");
+            Check.Equal(30, display.Applied[0], "the last one asked for");
+        }
+
+        private static void DisplaysAreReleasedAfterTheirLastChange()
+        {
+            Action drain = null;
+            BrightnessQueue queue = new BrightnessQueue(delegate(Action work) { drain = work; });
+            FakeDisplay display = new FakeDisplay();
+            queue.Set(display, 40);
+            queue.Finish(new List<BrightnessDisplay> { display });
+            Check.True(!display.Released, "not before the work has run");
+            drain();
+            Check.Equal(40, display.Applied[0], "the change still happens");
+            Check.True(display.Released, "released afterwards");
+        }
+    }
+
     internal static class StoreTests
     {
         private static readonly string[] NoLegacy = new string[0];
@@ -866,12 +947,22 @@ namespace Nilam.Tests
 
         private static void SettingsWindowParsesAndDefinesItsControls()
         {
-            Window w = Load(SettingsWindow.Xaml);
-            Has(w, "Settings", "PlaceText", "CityBox", "SearchButton", "SearchStatus", "CityList",
-                "UnitAuto", "UnitC", "UnitF", "ClockAuto", "Clock12", "Clock24", "IdlePhotos", "PhotoFolder",
-                "OpacitySlider", "OpacityText", "StartupBox", "SaveButton", "CancelButton",
-                "VersionRun", "CreditLink", "FolderLink");
-            foreach (string name in Settings.CardNames) Has(w, "Settings", "Card" + name);
+            // Dark, light, and a contrast theme, whose colours are references to
+            // the system palette rather than fixed values.
+            DialogTheme[] themes = { DialogTheme.Make(true, false, null), DialogTheme.Make(false, false, null),
+                                     DialogTheme.Make(false, true, null) };
+            foreach (DialogTheme theme in themes)
+            {
+                string xaml = SettingsWindow.Markup(theme);
+                Check.True(xaml.IndexOf("__", StringComparison.Ordinal) < 0, "an unfilled __TOKEN__ remains");
+                Window w = Load(xaml);
+                Has(w, "Settings", "PlaceText", "CityBox", "SearchButton", "SearchStatus", "CityList",
+                    "UnitAuto", "UnitC", "UnitF", "ClockAuto", "Clock12", "Clock24", "IdlePhotos",
+                    "PhotoRow", "PhotoFolder", "BrowseButton", "OpacitySlider", "OpacityText", "StartupBox",
+                    "SaveButton", "CancelButton", "VersionRun", "CreditLink", "FolderLink", "CardBatteryNote",
+                    "BrightnessRows", "BrightnessStatus");
+                foreach (string name in Settings.CardNames) Has(w, "Settings", "Card" + name);
+            }
         }
     }
 }

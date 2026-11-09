@@ -5,6 +5,26 @@ published under the name Desktop Widgets. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-11-09
+
+### Added
+
+- **Brightness in Settings.** A slider for each connected display: the laptop's
+  own screen, and any external monitor that supports DDC/CI. Changes show as you
+  drag, Save keeps them and Cancel puts them back. A monitor that cannot be
+  dimmed from Windows gets a line saying so.
+
+### Changed
+
+- **Redesigned settings window** in the style of Windows 11's own Settings:
+  cards with icons and a line of explanation, a switch tile for each widget,
+  segmented choices for units and time format, and a Save button in the
+  accent colour. It follows the Windows light or dark app mode and accent
+  colour, its title bar matches, and under a contrast theme it uses the
+  system colours. The window can be resized and scrolls when the screen is short.
+- The picture folder has a **Browse** button that opens the standard Windows
+  folder picker.
+
 ## [2.0.0] - 2026-10-13
 
 A major version because the project has a new name, the launcher is gone, the

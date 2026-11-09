@@ -248,9 +248,11 @@ Add-ToScene (Remove-FromWindow $w) 'DayBanner'
 [void](Save-Png $scene $workArea.Width $workArea.Height 1.25 (Join-Path $out 'hero.png'))
 
 # ================================================================== settings.png
-$xaml = Get-Static 'SettingsWindow' 'Xaml'
-$dialog = [Windows.Markup.XamlReader]::Parse($xaml)
-$dialog.FindName('PlaceText').Text = "Showing weather for $place. Search to change it."
+# Drawn in the dark theme, to sit with the cards in hero.png. The default
+# Windows accent is used, not this machine's.
+$dialogTheme = Invoke-App 'DialogTheme' 'Make' @($true, $false, $null)
+$dialog = [Windows.Markup.XamlReader]::Parse((Invoke-App 'SettingsWindow' 'Markup' @($dialogTheme)))
+$dialog.FindName('PlaceText').Text = $place
 $dialog.FindName('CityBox').Text = $place
 $list = $dialog.FindName('CityList')
 [void]$list.Items.Add("$place, Kerala, India")
@@ -259,43 +261,51 @@ $list.Visibility = 'Visible'
 foreach ($checked in 'UnitAuto', 'ClockAuto', 'IdlePhotos', 'StartupBox') { $dialog.FindName($checked).IsChecked = $true }
 foreach ($n in $names) { $dialog.FindName("Card$n").IsChecked = $true }
 $dialog.FindName('PhotoFolder').Text = 'C:\Users\you\Pictures\wallpaper'
+$dialog.FindName('BrightnessStatus').Text = 'Changes show as you drag. Cancel puts them back.'
+[void]$dialog.FindName('BrightnessRows').Children.Add((Invoke-App 'SettingsWindow' 'BrightnessRow' @($dialog, 'Built-in display', 'Laptop screen', 60)))
 $dialog.FindName('OpacitySlider').Value = 80
 $dialog.FindName('OpacityText').Text = '80%'
 $dialog.FindName('VersionRun').Text = "Nilam $((Get-Content (Join-Path $Repo 'VERSION') -TotalCount 1).Trim())"
 
-# The content is moved into a holder that takes the window's resources with it,
-# so the styles the window defines keep applying. That picture is then set into
-# a plain frame standing in for the window's own title bar and border.
+# The content is moved into a holder that takes the window's resources, and
+# the text settings it would have inherited from the window, with it. The
+# whole page is drawn, as though the window were tall enough not to scroll.
 $body = $dialog.Content
-$bodyWidth = 444
-$body.Measure((New-Object Windows.Size($bodyWidth, [double]::PositiveInfinity)))
-$bodyHeight = [Math]::Ceiling($body.DesiredSize.Height)
-$tmp = Join-Path $env:TEMP ("nilam-settings-body-" + [guid]::NewGuid().ToString('N') + ".png")
-$holder = New-Object Windows.Controls.Border
-$holder.Background = [Windows.Media.Brushes]::White
+$bodyWidth = 680
 $dialog.Content = $null
-$holder.Child = $body
+$holder = New-Object Windows.Controls.Border
 $holder.Resources = $dialog.Resources
+$holder.Background = $dialog.Background
+$holder.Child = $body
+[Windows.Documents.TextElement]::SetForeground($holder, $dialog.Foreground)
+[Windows.Documents.TextElement]::SetFontFamily($holder, $dialog.FontFamily)
+[Windows.Documents.TextElement]::SetFontSize($holder, $dialog.FontSize)
+[Windows.Media.TextOptions]::SetTextFormattingMode($holder, 'Display')
+$holder.Measure((New-Object Windows.Size($bodyWidth, [double]::PositiveInfinity)))
+$bodyHeight = [Math]::Ceiling($holder.DesiredSize.Height)
+$tmp = Join-Path $env:TEMP ("nilam-settings-body-" + [guid]::NewGuid().ToString('N') + ".png")
 [void](Save-Png $holder $bodyWidth $bodyHeight 1.5 $tmp)
 
+# A plain frame standing in for the window's title bar, which the app gives
+# the page's own colour.
 $frame = New-Object Windows.Controls.Border
-$frame.Background = [Windows.Media.Brushes]::White
-$frame.BorderBrush = ConvertTo-Brush '#FFB9B9B9'
+$frame.Background = $dialog.Background
+$frame.BorderBrush = ConvertTo-Brush '#FF3A3A3A'
 $frame.BorderThickness = New-Object Windows.Thickness(1)
 $frame.CornerRadius = New-Object Windows.CornerRadius(8)
 $frame.Margin = New-Object Windows.Thickness(16)
-$frame.Effect = New-Object Windows.Media.Effects.DropShadowEffect -Property @{ BlurRadius = 18; ShadowDepth = 3; Opacity = 0.22; Direction = 270 }
+$frame.Effect = New-Object Windows.Media.Effects.DropShadowEffect -Property @{ BlurRadius = 18; ShadowDepth = 3; Opacity = 0.3; Direction = 270 }
 $stack = New-Object Windows.Controls.StackPanel
 $title = New-Object Windows.Controls.DockPanel
 $title.Height = 32
-$close = New-Object Windows.Controls.TextBlock -Property @{ Text = [string][char]0xE8BB; FontFamily = (New-Object Windows.Media.FontFamily('Segoe Fluent Icons, Segoe MDL2 Assets')); FontSize = 10; VerticalAlignment = 'Center'; Margin = (New-Object Windows.Thickness(0, 0, 16, 0)); Foreground = (ConvertTo-Brush '#FF404040') }
+$close = New-Object Windows.Controls.TextBlock -Property @{ Text = [string][char]0xE8BB; FontFamily = (New-Object Windows.Media.FontFamily('Segoe Fluent Icons, Segoe MDL2 Assets')); FontSize = 10; VerticalAlignment = 'Center'; Margin = (New-Object Windows.Thickness(0, 0, 16, 0)); Foreground = (ConvertTo-Brush '#FFE0E0E0') }
 [Windows.Controls.DockPanel]::SetDock($close, 'Right')
 [void]$title.Children.Add($close)
 $icon = New-Object Windows.Controls.Image -Property @{ Width = 16; Height = 16; Margin = (New-Object Windows.Thickness(12, 0, 8, 0)); VerticalAlignment = 'Center' }
 $decoder = New-Object Windows.Media.Imaging.IconBitmapDecoder((New-Object Uri((Join-Path $Repo 'assets\app.ico'))), 'None', 'OnLoad')
 $icon.Source = ($decoder.Frames | Sort-Object PixelWidth | Where-Object { $_.PixelWidth -ge 32 } | Select-Object -First 1)
 [void]$title.Children.Add($icon)
-[void]$title.Children.Add((New-Object Windows.Controls.TextBlock -Property @{ Text = 'Nilam settings'; FontFamily = (New-Object Windows.Media.FontFamily('Segoe UI')); FontSize = 12; VerticalAlignment = 'Center' }))
+[void]$title.Children.Add((New-Object Windows.Controls.TextBlock -Property @{ Text = 'Nilam settings'; FontFamily = (New-Object Windows.Media.FontFamily('Segoe UI')); FontSize = 12; VerticalAlignment = 'Center'; Foreground = (ConvertTo-Brush '#FFE0E0E0') }))
 [void]$stack.Children.Add($title)
 $picture = New-Object Windows.Controls.Image -Property @{ Width = $bodyWidth; Height = $bodyHeight; Stretch = 'Fill' }
 $loaded = New-Object Windows.Media.Imaging.BitmapImage

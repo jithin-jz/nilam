@@ -279,6 +279,148 @@ namespace Nilam
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         internal static extern int RegisterWindowMessage(string name);
 
+        // ---- title bar ----------------------------------------------------
+        // Lets an ordinary window's title bar follow the dark theme and take the
+        // colour of the window below it. Windows versions that predate either
+        // attribute refuse it quietly and keep the standard bar.
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+        private const int DWMWA_CAPTION_COLOR = 35;
+
+        internal static void StyleTitleBar(IntPtr hwnd, bool dark, byte r, byte g, byte b)
+        {
+            int on = dark ? 1 : 0;
+            DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref on, 4);
+            int colorref = r | (g << 8) | (b << 16);
+            DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref colorref, 4);
+        }
+
+        // ---- display brightness -------------------------------------------
+        // DDC/CI, the channel to an external monitor. See Brightness.
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct MONITORINFOEX
+        {
+            internal int cbSize;
+            internal RECT rcMonitor;
+            internal RECT rcWork;
+            internal uint dwFlags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] internal string szDevice;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct DISPLAY_DEVICE
+        {
+            internal int cb;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] internal string DeviceName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] internal string DeviceString;
+            internal int StateFlags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] internal string DeviceID;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] internal string DeviceKey;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Unicode)]
+        private struct PHYSICAL_MONITOR
+        {
+            internal IntPtr hPhysicalMonitor;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] internal string szPhysicalMonitorDescription;
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetMonitorInfoW")]
+        private static extern bool GetMonitorInfoEx(IntPtr hMonitor, ref MONITORINFOEX info);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern bool EnumDisplayDevices(string device, uint index, ref DISPLAY_DEVICE info, uint flags);
+
+        private const uint EDD_GET_DEVICE_INTERFACE_NAME = 1;
+
+        [DllImport("dxva2.dll")]
+        private static extern bool GetNumberOfPhysicalMonitorsFromHMONITOR(IntPtr monitor, out uint count);
+
+        [DllImport("dxva2.dll")]
+        private static extern bool GetPhysicalMonitorsFromHMONITOR(IntPtr monitor, uint count, [Out] PHYSICAL_MONITOR[] monitors);
+
+        [DllImport("dxva2.dll")]
+        private static extern bool DestroyPhysicalMonitor(IntPtr physicalMonitor);
+
+        [DllImport("dxva2.dll")]
+        private static extern bool GetVCPFeatureAndVCPFeatureReply(IntPtr physicalMonitor, byte code, IntPtr type,
+                                                                   out uint current, out uint maximum);
+
+        [DllImport("dxva2.dll")]
+        private static extern bool SetVCPFeature(IntPtr physicalMonitor, byte code, uint value);
+
+        // The MCCS code for luminance. The low-level VCP calls are used rather
+        // than GetMonitorBrightness because that one first demands a capabilities
+        // string, which plenty of monitors that do obey this code never send.
+        private const byte VCP_BRIGHTNESS = 0x10;
+
+        /// <summary>A physical screen. The handle must go to ReleasePhysicalMonitor.</summary>
+        internal class PhysicalMonitor
+        {
+            internal IntPtr Handle;
+            /// <summary>The n of \\.\DISPLAYn - what Windows calls "Display n".</summary>
+            internal int Number;
+            internal string DeviceId;
+        }
+
+        internal static List<PhysicalMonitor> PhysicalMonitors()
+        {
+            List<PhysicalMonitor> found = new List<PhysicalMonitor>();
+            MonitorEnumProc proc = delegate(IntPtr monitor, IntPtr hdc, ref RECT clip, IntPtr data)
+            {
+                MONITORINFOEX mi = new MONITORINFOEX();
+                mi.cbSize = Marshal.SizeOf(typeof(MONITORINFOEX));
+                if (!GetMonitorInfoEx(monitor, ref mi)) return true;
+
+                uint count;
+                if (!GetNumberOfPhysicalMonitorsFromHMONITOR(monitor, out count) || count == 0) return true;
+                PHYSICAL_MONITOR[] screens = new PHYSICAL_MONITOR[count];
+                if (!GetPhysicalMonitorsFromHMONITOR(monitor, count, screens)) return true;
+
+                for (uint i = 0; i < count; i++)
+                {
+                    PhysicalMonitor p = new PhysicalMonitor();
+                    p.Handle = screens[i].hPhysicalMonitor;
+                    p.Number = DisplayNumber(mi.szDevice);
+                    DISPLAY_DEVICE dd = new DISPLAY_DEVICE();
+                    dd.cb = Marshal.SizeOf(typeof(DISPLAY_DEVICE));
+                    p.DeviceId = EnumDisplayDevices(mi.szDevice, i, ref dd, EDD_GET_DEVICE_INTERFACE_NAME) ? dd.DeviceID : "";
+                    found.Add(p);
+                }
+                return true;
+            };
+            EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, proc, IntPtr.Zero);
+            GC.KeepAlive(proc);
+            return found;
+        }
+
+        /// <summary>2 for "\\.\DISPLAY2"; 0 when the name has no number on the end.</summary>
+        internal static int DisplayNumber(string deviceName)
+        {
+            if (string.IsNullOrEmpty(deviceName)) return 0;
+            int i = deviceName.Length;
+            while (i > 0 && char.IsDigit(deviceName[i - 1])) i--;
+            int n;
+            return int.TryParse(deviceName.Substring(i), out n) ? n : 0;
+        }
+
+        internal static bool GetDdcBrightness(IntPtr physicalMonitor, out uint current, out uint maximum)
+        {
+            return GetVCPFeatureAndVCPFeatureReply(physicalMonitor, VCP_BRIGHTNESS, IntPtr.Zero, out current, out maximum);
+        }
+
+        internal static bool SetDdcBrightness(IntPtr physicalMonitor, uint value)
+        {
+            return SetVCPFeature(physicalMonitor, VCP_BRIGHTNESS, value);
+        }
+
+        internal static void ReleasePhysicalMonitor(IntPtr physicalMonitor)
+        {
+            DestroyPhysicalMonitor(physicalMonitor);
+        }
+
         // ---- system stats -------------------------------------------------
         [DllImport("kernel32.dll")]
         internal static extern bool GetSystemTimes(out long idleTime, out long kernelTime, out long userTime);

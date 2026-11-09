@@ -40,6 +40,8 @@
 | **Notes** | A scratchpad that saves itself |
 | **Day banner** | The weekday in large spaced capitals across the top of the screen |
 
+- **Brightness for every screen.** A slider in Settings for the laptop's own
+  display and for each external monitor that supports DDC/CI.
 - **Stays out of the way.** The cards never take focus, never appear in Alt+Tab,
   and sit behind every app window.
 - **Yours to arrange.** Drag any card; positions snap to a grid and are
@@ -151,7 +153,7 @@ Right-click any card, or click the icon in the notification area.
 
 <p align="center">
   <img src="docs/images/settings.png" width="420"
-       alt="The Nilam settings window: weather city search with Kozhikode, Kerala, India selected, temperature unit, time format, a checkbox for each card, the idle picture folder, a card opacity slider at 80 percent, and Start with Windows.">
+       alt="The Nilam settings window in the dark theme: a switch tile for each card, the weather location with a city search and Kozhikode, Kerala, India selected, segmented choices for temperature unit and time format, the idle picture folder with a Browse button, a brightness slider for the display, a card opacity slider at 80 percent, Start with Windows, and Save and Cancel buttons.">
 </p>
 
 | | |
@@ -160,6 +162,7 @@ Right-click any card, or click the icon in the notification area.
 | **Clock** | 12-hour, 24-hour, or follow your Windows time format |
 | **Cards** | switch any card off; the rest close up the gap |
 | **Media card** | show pictures from a folder while nothing is playing, and which folder |
+| **Brightness** | a slider for each display. External monitors need DDC/CI, which is usually on and can be set in the monitor's own menu |
 | **Appearance** | how opaque the cards are |
 | **Startup** | start with Windows |
 

@@ -82,6 +82,7 @@ rem the test runner's entry point over the app's.
 >>"%RSP%" echo /reference:"%FW%\mscorlib.dll"
 >>"%RSP%" echo /reference:"%FW%\System.dll"
 >>"%RSP%" echo /reference:"%FW%\System.Core.dll"
+>>"%RSP%" echo /reference:"%FW%\System.Management.dll"
 >>"%RSP%" echo /reference:"%FW%\System.Xml.dll"
 >>"%RSP%" echo /reference:"%FW%\System.Web.Extensions.dll"
 >>"%RSP%" echo /reference:"%GAC%\GAC_MSIL\PresentationFramework\v4.0_4.0.0.0__31bf3856ad364e35\PresentationFramework.dll"

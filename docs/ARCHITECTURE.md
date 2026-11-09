@@ -65,7 +65,9 @@ src/
   WeatherCard.cs        weather: refresh, retry, staleness
   MediaCard.cs          now playing: art, transport, wave, scrubbing
   DayBanner.cs          the weekday banner and its font
-  SettingsWindow.cs     the settings window
+  SettingsWindow.cs     the settings window and its light/dark/contrast theme
+  FolderPicker.cs       the Windows folder picker (IFileOpenDialog)
+  Brightness.cs         finds displays, sets their brightness (WMI and DDC/CI)
   Tray.cs               notification-area icon (Shell_NotifyIcon)
   Markup.cs             all widget XAML, as strings; the Theme
   LayoutPlanner.cs      where cards go - pure arithmetic, fully tested
@@ -225,6 +227,23 @@ the card and only fall back to a media key when there is no session.
 flushes it, and swaps it in with one rename. Notes are saved 600 ms after the
 last keystroke, and layout 400 ms after a drag ends, rather than on every
 keystroke and every pixel.
+
+## Brightness
+
+The settings window has a slider for each display, and nothing about brightness
+is stored: a monitor remembers its own setting. Two routes are needed, because
+each works on only one kind of screen. A laptop's panel answers through WMI
+(`WmiMonitorBrightnessMethods`), and an external monitor over DDC/CI
+(`SetVCPFeature`, code `0x10`). `Brightness.Discover` matches the two lists by
+instance path, so a panel is never offered twice.
+
+This is the one use of WMI, and it happens only while the settings window is
+open. The rule against WMI below is about the cards' periodic work.
+
+A DDC/CI exchange takes tens of milliseconds, far slower than a slider moves.
+`BrightnessQueue` applies changes on a background task and keeps only the newest
+value per display, so the screen follows the drag rather than crawling through
+old values after it ends.
 
 ## State
 
