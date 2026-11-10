@@ -18,11 +18,11 @@
 </p>
 
 <p align="center">
-  <a href="#install"><b>Install</b></a> ·
-  <a href="#features"><b>Features</b></a> ·
-  <a href="#commands"><b>Commands</b></a> ·
-  <a href="docs/ARCHITECTURE.md"><b>Architecture</b></a> ·
-  <a href="CHANGELOG.md"><b>Changelog</b></a>
+  <a href="#install"><img alt="Install" src="https://img.shields.io/badge/Install-3987e5?style=for-the-badge"></a>
+  <a href="#features"><img alt="Features" src="https://img.shields.io/badge/Features-2c2c2a?style=for-the-badge"></a>
+  <a href="#commands"><img alt="Commands" src="https://img.shields.io/badge/Commands-2c2c2a?style=for-the-badge"></a>
+  <a href="docs/ARCHITECTURE.md"><img alt="Architecture" src="https://img.shields.io/badge/Architecture-2c2c2a?style=for-the-badge"></a>
+  <a href="CHANGELOG.md"><img alt="Changelog" src="https://img.shields.io/badge/Changelog-2c2c2a?style=for-the-badge"></a>
 </p>
 
 ---
