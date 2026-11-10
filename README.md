@@ -15,10 +15,10 @@
 
 <p align="center">
   <img src="docs/images/desktop.png" width="100%"
-       alt="A Windows 11 desktop with Nilam running: the word TUESDAY in large spaced capitals across the top, and on the right a clock, weather for Kozhikode, a now-playing card with a wave progress bar, system stats, battery and notes. The taskbar at the bottom is fully see-through, showing the dark wallpaper behind its icons.">
+       alt="A Windows 11 desktop with Nilam running on a dark wallpaper: the word TUESDAY in large spaced capitals across the top, and on the right a clock, weather for Kozhikode, a now-playing card with a wave progress bar, system stats, battery and notes.">
 </p>
 <p align="center"><sub>
-  A real desktop, with the <a href="#the-clear-taskbar">clear taskbar</a> on.
+  A real desktop running Nilam.
 </sub></p>
 
 > *Nilam* (നിലം) is Malayalam for the ground: the layer everything else stands
