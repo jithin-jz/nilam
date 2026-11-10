@@ -30,6 +30,14 @@ namespace Nilam
                 return;
             }
 
+            // "Nilam.exe --settings" is the settings window alone, in a process
+            // that ends when it closes; see SettingsHost for why.
+            if (Array.IndexOf(args, SettingsHost.Argument) >= 0)
+            {
+                SettingsHost.Run(profile);
+                return;
+            }
+
             // Single instance: a second launch (the startup entry plus a manual
             // start, say) would stack a duplicate set of cards on the desktop.
             bool isFirst;
@@ -69,16 +77,25 @@ namespace Nilam
                 };
 
                 using (EventWaitHandle exit = new EventWaitHandle(false, EventResetMode.AutoReset, exitSignal))
+                using (EventWaitHandle reload = new EventWaitHandle(false, EventResetMode.AutoReset, SettingsHost.ReloadSignal(profile)))
                 {
-                    // The callback arrives on a thread-pool thread.
+                    // The callbacks arrive on a thread-pool thread.
                     RegisteredWaitHandle wait = ThreadPool.RegisterWaitForSingleObject(exit,
                         delegate(object state, bool timedOut)
                         {
                             app.Dispatcher.BeginInvoke(new Action(app.Quit));
                         },
                         null, Timeout.Infinite, true);
+                    // Set by the settings process after every save, so not once only.
+                    RegisteredWaitHandle reloadWait = ThreadPool.RegisterWaitForSingleObject(reload,
+                        delegate(object state, bool timedOut)
+                        {
+                            app.Dispatcher.BeginInvoke(new Action(app.ReloadSettings));
+                        },
+                        null, Timeout.Infinite, false);
                     app.Run();
                     wait.Unregister(null);
+                    reloadWait.Unregister(null);
                 }
 
                 GC.KeepAlive(guard);

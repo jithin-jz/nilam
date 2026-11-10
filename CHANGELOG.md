@@ -5,6 +5,17 @@ published under the name Desktop Widgets. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [2.2.2] - 2026-11-10
+
+### Changed
+
+- **Less memory after you have used Settings.** The settings window now runs in
+  a process of its own, which ends when you close it. Opened inside the
+  widgets, it left about 7 MB behind for the rest of the session - roughly a
+  third more than the widgets need on their own (about 20 MB) - and nothing
+  could give it back. It opens just as quickly, and Save applies your changes
+  the same way. While it is open, Task Manager shows two Nilam processes.
+
 ## [2.2.1] - 2026-11-10
 
 ### Fixed

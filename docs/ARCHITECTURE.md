@@ -75,6 +75,7 @@ src/
   MediaCard.cs          now playing: art, transport, wave, scrubbing
   DayBanner.cs          the weekday banner and its font
   SettingsWindow.cs     the settings window and its light/dark/contrast theme
+  SettingsHost.cs       runs that window in a process of its own (--settings)
   FolderPicker.cs       the Windows folder picker (IFileOpenDialog)
   Brightness.cs         finds displays, sets their brightness (WMI and DDC/CI)
   Tray.cs               notification-area icon (Shell_NotifyIcon)
@@ -186,7 +187,7 @@ in; it needs a mixed-DPI setup to test and has not been done.
 
 ## Why it stays small
 
-Three choices keep the process small and nearly idle:
+Four choices keep the process small and nearly idle:
 
 - **`RenderMode.SoftwareOnly`.** Hardware rendering maps the GPU driver stack
   into the process - measured at about 81 MB of extra private bytes on an Intel
@@ -196,6 +197,24 @@ Three choices keep the process small and nearly idle:
 - **P/Invoke instead of WMI or Windows Forms** for CPU, memory, disk, battery,
   monitors and the notification icon, so nothing wakes the WMI provider host
   every few seconds and no extra UI framework is loaded.
+- **The settings window is a process of its own** (`Nilam.exe --settings`,
+  `SettingsHost`). Opened inside the widgets' process it added about 7 MB to
+  their private working set that never came back after it closed - not after a
+  full garbage collection either, with the window object itself collected. WPF's
+  software renderer keeps the largest drawing buffer it has needed (the whole
+  window, 998 x 1000 pixels at 150%: 3.8 MB), and the heap keeps the room it
+  grew into. In its own process all of it goes back to Windows when the window
+  closes. The window opens as quickly as before (about 0.2-0.3 s), saves the
+  settings file, and sets a named event (`Nilam.Reload`) that makes the widgets
+  reload it; a second open sets `Nilam.Settings.Show` to bring the open window
+  forward instead.
+
+What remains is mostly WPF itself. Measured on the same machine, a single
+transparent WPF window that does nothing but tick a clock, rendered the same
+way, uses 10 MB of private working set; Nilam with all seven cards uses about
+20 MB. Hardware rendering would put that same one-window app at 57 MB.
+Settings that might trim the GC's allocation budget (`GCgen0size`,
+`gcConcurrent` in an app.config) were measured too and changed nothing.
 
 And one thing that is deliberately *absent*: **there is no `DropShadowEffect` on
 the cards.** The original style had one. Each card's window is exactly the size

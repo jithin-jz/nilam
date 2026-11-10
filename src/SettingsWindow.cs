@@ -922,7 +922,8 @@ namespace Nilam
             return theme.Apply(Xaml);
         }
 
-        private readonly WidgetApp app;
+        private readonly Store store;
+        private readonly Action<Settings> save;
         private readonly Window window;
         private readonly DialogTheme theme;
         private readonly Settings draft;
@@ -948,10 +949,13 @@ namespace Nilam
 
         internal event EventHandler Closed;
 
-        internal SettingsWindow(WidgetApp app)
+        /// <param name="store">Where the current settings are read from.</param>
+        /// <param name="save">Called with the new settings when the user saves.</param>
+        internal SettingsWindow(Store store, Action<Settings> save)
         {
-            this.app = app;
-            draft = app.Store.Settings.Clone();
+            this.store = store;
+            this.save = save;
+            draft = store.Settings.Clone();
             theme = DialogTheme.Current();
 
             using (StringReader sr = new StringReader(Markup(theme)))
@@ -1049,7 +1053,7 @@ namespace Nilam
             opacity.ValueChanged += delegate { opacityText.Text = (int)opacity.Value + "%"; };
 
             Find<Hyperlink>("CreditLink").Click += delegate { WidgetApp.Open(Weather.CreditUrl); };
-            Find<Hyperlink>("FolderLink").Click += delegate { WidgetApp.Open(app.Store.Dir); };
+            Find<Hyperlink>("FolderLink").Click += delegate { WidgetApp.Open(store.Dir); };
             Find<Button>("SaveButton").Click += delegate { Save(); };
             Find<Button>("CancelButton").Click += delegate { window.Close(); };
             window.Closed += delegate
@@ -1311,8 +1315,9 @@ namespace Nilam
             if (startup != startupWas) StartupEntry.Set(startup);
 
             saved = true;
+            // Saved before the window closes: closing it ends this process.
+            save(draft);
             window.Close();
-            app.ApplySettings(draft);
         }
     }
 }

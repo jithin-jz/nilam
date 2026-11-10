@@ -32,7 +32,6 @@ namespace Nilam
         private readonly DispatcherTimer settle;
         private readonly DispatcherTimer wake;
         private Tray tray;
-        private SettingsWindow settingsWindow;
         private bool hooked;
         private bool quitting;
 
@@ -388,24 +387,23 @@ namespace Nilam
             if (tray != null) Native.SetForegroundWindow(tray.Handle);
         }
 
+        /// <summary>The settings window runs in a process of its own; see SettingsHost.</summary>
         internal void OpenSettings()
         {
-            if (settingsWindow != null)
-            {
-                settingsWindow.Activate();
-                return;
-            }
-            settingsWindow = new SettingsWindow(this);
-            settingsWindow.Closed += delegate { settingsWindow = null; };
-            settingsWindow.Show();
+            SettingsHost.Open();
         }
 
-        internal void ApplySettings(Settings updated)
+        /// <summary>
+        /// The settings process saved: read the file it wrote and apply it. It
+        /// has already been written, so nothing is saved here.
+        /// </summary>
+        internal void ReloadSettings()
         {
-            Store.Settings = updated;
-            Store.SaveSettings();
+            if (quitting) return;
+            Store.LoadSettings();
             ApplyTaskbar();
             Rebuild();
+            Log.Info("settings", "applied what the settings window saved");
         }
 
         private void ApplyTaskbar()
@@ -444,7 +442,6 @@ namespace Nilam
             if (quitting) return;       // the menu and an --exit signal can both arrive
             quitting = true;
             FlushAll();
-            if (settingsWindow != null) settingsWindow.Close();
             CloseCards();
             if (Desktop != null) Desktop.Dispose();
             if (Taskbar != null)

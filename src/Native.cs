@@ -28,6 +28,12 @@ namespace Nilam
         [DllImport("user32.dll")]
         internal static extern bool SetForegroundWindow(IntPtr hWnd);
 
+        /// <summary>Lets another process bring its window to the front; see SettingsHost.Open.</summary>
+        [DllImport("user32.dll")]
+        internal static extern bool AllowSetForegroundWindow(int processId);
+
+        internal const int ASFW_ANY = -1;
+
         [DllImport("user32.dll")]
         internal static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
