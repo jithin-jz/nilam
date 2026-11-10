@@ -2,7 +2,7 @@
 
 <p align="center">
   <b>Beautiful desktop widgets for Windows.</b><br>
-  Clock, weather, music, system stats and notes — living on your desktop, beneath every window.
+  Clock, weather, music, system stats and notes, living on your desktop, beneath every window.
 </p>
 
 <p align="center">
@@ -27,7 +27,7 @@
 
 ---
 
-*Nilam* (നിലം) is Malayalam for **"the ground"** — the layer everything else stands on. Every window draws over the widgets, so they feel like part of the desktop — never something floating over your work.
+*Nilam* (നിലം) is Malayalam for **"the ground"**: the layer everything else stands on. Every window draws over the widgets, so they feel like part of the desktop, never something floating over your work.
 
 ## Install
 
@@ -41,14 +41,14 @@ Downloads the latest release, verifies its checksum, builds Nilam with the C# co
 
 ## Features
 
-- **Clock** — your Windows format, 12- or 24-hour
-- **Weather** — current conditions, high and low, for any city
-- **Now playing** — cover art, playback controls and seeking
-- **System** and **Battery** — CPU, memory, free disk, charge level
-- **Notes** — a scratchpad that saves as you type
-- **Day banner** — the weekday in large spaced capitals
-- **Brightness** — a slider for every display, including DDC/CI monitors
-- **Clear taskbar** — see-through while the desktop is empty
+- **Clock**: your Windows format, 12- or 24-hour
+- **Weather**: current conditions, high and low, for any city
+- **Now playing**: cover art, playback controls and seeking
+- **System** and **Battery**: CPU, memory, free disk, charge level
+- **Notes**: a scratchpad that saves as you type
+- **Day banner**: the weekday in large spaced capitals
+- **Brightness**: a slider for every display, including DDC/CI monitors
+- **Clear taskbar**: see-through while the desktop is empty
 
 Drag any card anywhere, on any monitor, and switch off the ones you don't need.
 
@@ -73,13 +73,13 @@ No background services, no telemetry, no admin rights.
 Right-click any card, or the Nilam tray icon, to open **Settings**, lock or reset positions, or exit.
 
 <details>
-<summary><b>Settings window</b> — widgets, weather, clock, media pictures, brightness, opacity, startup</summary>
+<summary><b>Settings window</b>: widgets, weather, clock, media pictures, brightness, opacity, startup</summary>
 <br>
 <p align="center"><img src="docs/images/settings.png" width="420" alt="The Nilam settings window in dark theme, with toggles for each widget, weather location, temperature and time format, media card pictures, display brightness, card opacity and start with Windows."></p>
 </details>
 
 <details>
-<summary><b>Clear taskbar</b> — how it works</summary>
+<summary><b>Clear taskbar</b>: how it works</summary>
 <br>
 
 The taskbar on each monitor turns fully transparent while nothing is open there, and returns as soon as a window, Start, Search or Task View opens. Windows 11 on Intel or AMD only.
@@ -103,7 +103,7 @@ Also removable from **Settings › Apps › Installed apps**.
 
 No account, no telemetry. Nilam only talks to [Open-Meteo](https://open-meteo.com) (weather for your city) and GitHub (install/update). Settings, layout and notes are plain files in `%APPDATA%\Nilam`. Details in [PRIVACY.md](PRIVACY.md).
 
-Something wrong? Check `%APPDATA%\Nilam\widgets.log` — Settings has a link to the folder.
+Something wrong? Check `%APPDATA%\Nilam\widgets.log`. Settings has a link to the folder.
 
 ## Build from source
 
@@ -117,4 +117,4 @@ Everything except the taskbar helper builds with tools already in Windows. See [
 
 ## Licence
 
-[MIT](LICENSE). Banner font **Michroma** is bundled under the SIL OFL 1.1 (the banner was designed around **Anurati** by Emmeran Richard — drop your own copy in the `fonts` folder). **Weather data by [Open-Meteo.com](https://open-meteo.com/)**, CC BY 4.0, non-commercial use. See [NOTICE](NOTICE).
+[MIT](LICENSE). Banner font **Michroma** is bundled under the SIL OFL 1.1 (the banner was designed around **Anurati** by Emmeran Richard; drop your own copy in the `fonts` folder). **Weather data by [Open-Meteo.com](https://open-meteo.com/)**, CC BY 4.0, non-commercial use. See [NOTICE](NOTICE).
