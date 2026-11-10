@@ -27,17 +27,7 @@
 
 ---
 
-*Nilam* (നിലം) is Malayalam for **"the ground"** — the layer everything else stands on.
-
-```mermaid
-flowchart TB
-    A["🪟  Your apps and windows"] --> B["🧩  Nilam cards"] --> C["🖼️  Wallpaper"]
-    style A fill:#2c2c2a,stroke:#383835,color:#f0efec
-    style B fill:#3987e5,stroke:#3987e5,color:#0b0b0b
-    style C fill:#1a1a19,stroke:#383835,color:#c3c2b7
-```
-
-Every window draws over the widgets, so they feel like part of the desktop — never something floating over your work.
+*Nilam* (നിലം) is Malayalam for **"the ground"** — the layer everything else stands on. Every window draws over the widgets, so they feel like part of the desktop — never something floating over your work.
 
 ## Install
 
@@ -51,11 +41,14 @@ Downloads the latest release, verifies its checksum, builds Nilam with the C# co
 
 ## Features
 
-| | | |
-|---|---|---|
-| 🕐 **Clock** — your Windows format, 12/24-hour | 🌤️ **Weather** — now, high and low, any city | 🎵 **Now playing** — art, controls, seeking |
-| 📊 **System** — CPU, memory, free disk | 🔋 **Battery** — charge and power state | 📝 **Notes** — saves as you type |
-| 📅 **Day banner** — the weekday, large | ☀️ **Brightness** — every display, incl. DDC/CI | 🫥 **Clear taskbar** — see-through on an empty desktop |
+- **Clock** — your Windows format, 12- or 24-hour
+- **Weather** — current conditions, high and low, for any city
+- **Now playing** — cover art, playback controls and seeking
+- **System** and **Battery** — CPU, memory, free disk, charge level
+- **Notes** — a scratchpad that saves as you type
+- **Day banner** — the weekday in large spaced capitals
+- **Brightness** — a slider for every display, including DDC/CI monitors
+- **Clear taskbar** — see-through while the desktop is empty
 
 Drag any card anywhere, on any monitor, and switch off the ones you don't need.
 
@@ -96,12 +89,13 @@ It runs a small helper inside Explorer, is **off by default**, always restores t
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `nilam version` | Show the installed and latest versions |
-| `nilam update` | Install the latest release if newer |
-| `nilam install` | Reinstall the latest release |
-| `nilam uninstall` | Remove Nilam (`--purge` also deletes settings and notes) |
+```powershell
+nilam version            # show the installed and latest versions
+nilam update             # install the latest release if newer
+nilam install            # reinstall the latest release
+nilam uninstall          # remove Nilam
+nilam uninstall --purge  # also delete settings and notes
+```
 
 Also removable from **Settings › Apps › Installed apps**.
 
