@@ -24,6 +24,7 @@ namespace Nilam
         internal readonly MediaMonitor Player = new MediaMonitor();
         internal Theme Theme;
         internal DesktopLayer Desktop;
+        internal TaskbarStyle Taskbar;
 
         private readonly List<Card> cards = new List<Card>();
         private readonly List<DispatcherTimer> timers = new List<DispatcherTimer>();
@@ -66,6 +67,8 @@ namespace Nilam
                 ShowCards();
                 Store.SaveLayout();
                 Hook();
+                Taskbar = new TaskbarStyle(Dispatcher);
+                ApplyTaskbar();
                 Log.Info("app", "started " + AppInfo.Version + ", " + cards.Count + " card(s)");
             }
             catch (Exception ex)
@@ -380,7 +383,22 @@ namespace Nilam
         {
             Store.Settings = updated;
             Store.SaveSettings();
+            ApplyTaskbar();
             Rebuild();
+        }
+
+        private void ApplyTaskbar()
+        {
+            if (Taskbar == null) return;
+            try
+            {
+                Taskbar.SetEnabled(Store.Settings.ClearTaskbar);
+            }
+            catch (Exception ex)
+            {
+                // The taskbar is a nicety; it must never take the cards down.
+                Log.Error("taskbar", ex);
+            }
         }
 
         private void ResetPositions()
@@ -405,6 +423,14 @@ namespace Nilam
             if (settingsWindow != null) settingsWindow.Close();
             CloseCards();
             if (Desktop != null) Desktop.Dispose();
+            if (Taskbar != null)
+            {
+                // Puts the taskbars back now rather than when the agent notices
+                // this process has gone.
+                try { Taskbar.Dispose(); }
+                catch (Exception ex) { Log.Error("taskbar", ex); }
+                Taskbar = null;
+            }
             if (tray != null)
             {
                 tray.Dispose();

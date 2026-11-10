@@ -33,10 +33,12 @@ param(
 )
 
 # Filled in by the release workflow when this file is published as a release
-# asset, which ties a downloaded installer to one exact source archive. In the
-# repository both are empty, meaning "an unreleased copy".
+# asset, which ties a downloaded installer to one exact source archive and one
+# exact set of prebuilt taskbar files. In the repository all three are empty,
+# meaning "an unreleased copy".
 $ReleaseTag = ''
 $ReleaseSourceSha256 = ''
+$ReleaseTaskbarSha256 = ''
 
 $failed = $false
 try {
@@ -187,6 +189,9 @@ try {
             $srcRoot = $null
             $zip = $null
             $expected = $SourceSha256
+            # True when this is the very release the installer was stamped
+            # with - the one case where its taskbar files can be checked.
+            $fromRelease = $false
 
             if ($SourcePath) {
                 if (-not (Test-Path -LiteralPath $SourcePath)) { throw "-SourcePath '$SourcePath' does not exist." }
@@ -207,6 +212,7 @@ try {
                     try {
                         Get-File "https://github.com/$Repo/releases/download/$want/nilam-source.zip" $zip
                         if (-not $expected -and $want -eq $ReleaseTag) { $expected = $ReleaseSourceSha256 }
+                        $fromRelease = $ReleaseTag -and $want -eq $ReleaseTag
                     }
                     catch {
                         # A tag with no release assets: made by hand, or its
@@ -274,6 +280,46 @@ try {
                 $haveCli = ((Invoke-Cmd (Join-Path $stage 'cli\build.cmd')) -eq 0) -and (Test-Path (Join-Path $stage 'bin\cli\nilam.exe'))
                 if (-not $haveCli) { Warn 'the nilam command did not build - the widgets are installed without it' }
             }
+            # ------------------------------------------------- the clear taskbar
+            # Two 64-bit files that run inside Explorer (see taskbar\). They are
+            # built with Visual Studio's C++ compiler, which an ordinary PC does
+            # not have, so a release carries them prebuilt and checksummed. A
+            # copy built in the source folder by taskbar\build.cmd is used when
+            # there is one. Without either, everything else installs as normal
+            # and the option is greyed out in the settings window.
+            $taskbarFiles = @('NilamTaskbar.dll', 'NilamTaskbarLoader.exe')
+            $taskbarOut = Join-Path $stage 'bin\taskbar'
+            $taskbarBuilt = Join-Path $srcRoot 'bin\taskbar'
+            $arch = $env:PROCESSOR_ARCHITEW6432
+            if (-not $arch) { $arch = $env:PROCESSOR_ARCHITECTURE }
+            $taskbarFits = ($os.Build -ge 22000) -and ($arch -eq 'AMD64')
+            $complete = { param($dir) @($taskbarFiles | Where-Object { Test-Path -LiteralPath (Join-Path $dir $_) }).Count -eq $taskbarFiles.Count }
+
+            if (& $complete $taskbarBuilt) {
+                New-Item -ItemType Directory -Force $taskbarOut | Out-Null
+                foreach ($f in $taskbarFiles) { Copy-Item -LiteralPath (Join-Path $taskbarBuilt $f) -Destination $taskbarOut }
+                Good 'clear taskbar: using the copy built in this folder'
+            }
+            elseif ($fromRelease -and $ReleaseTaskbarSha256 -and $taskbarFits) {
+                $taskbarZip = Join-Path $temp 'taskbar.zip'
+                try {
+                    Get-File "https://github.com/$Repo/releases/download/$ReleaseTag/Nilam-$version-taskbar-x64.zip" $taskbarZip
+                    $actual = (Get-FileHash -LiteralPath $taskbarZip -Algorithm SHA256).Hash
+                    # These run inside Explorer: never install them unchecked.
+                    if ($actual -ine $ReleaseTaskbarSha256) { throw "they do not match their published checksum (expected $ReleaseTaskbarSha256, got $actual)" }
+                    Expand-Archive -LiteralPath $taskbarZip -DestinationPath $taskbarOut -Force
+                    if (-not (& $complete $taskbarOut)) { throw 'the download is incomplete' }
+                    Good 'clear taskbar: downloaded and checksum verified'
+                }
+                catch {
+                    if (Test-Path -LiteralPath $taskbarOut) { Remove-Item -LiteralPath $taskbarOut -Recurse -Force }
+                    Warn "the clear taskbar files could not be installed: $($_.Exception.Message). Everything else is unaffected."
+                }
+            }
+            elseif ($taskbarFits) {
+                Warn 'the clear taskbar is not included: it comes with published releases, or build it with taskbar\build.cmd'
+            }
+
             $obj = Join-Path $stage 'bin\obj'
             if (Test-Path $obj) { Remove-Item $obj -Recurse -Force }
 

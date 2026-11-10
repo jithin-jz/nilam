@@ -843,6 +843,20 @@ namespace Nilam
         <!-- One row per connected display, added once they have been found. -->
         <StackPanel x:Name=""BrightnessRows""/>
 
+        <!-- ============================================================ taskbar -->
+        <TextBlock Text=""Taskbar"" Style=""{StaticResource Section}""/>
+        <CheckBox x:Name=""ClearTaskbar"" Style=""{StaticResource Switch}""
+                  AutomationProperties.Name=""Clear taskbar on the desktop"">
+          <StackPanel Orientation=""Horizontal"">
+            <TextBlock Style=""{StaticResource RowGlyph}"" Text=""&#xE771;""/>
+            <StackPanel VerticalAlignment=""Center"">
+              <TextBlock Text=""Clear taskbar on the desktop"" Style=""{StaticResource RowTitle}""/>
+              <TextBlock x:Name=""ClearTaskbarNote"" Style=""{StaticResource RowDesc}""
+                         Text=""See-through while nothing is open, back to normal when a window, Start or Search opens""/>
+            </StackPanel>
+          </StackPanel>
+        </CheckBox>
+
         <!-- ============================================================ general -->
         <TextBlock Text=""General"" Style=""{StaticResource Section}""/>
         <Border Style=""{StaticResource Row}"">
@@ -922,7 +936,7 @@ namespace Nilam
         private readonly Button searchButton;
         private readonly ListBox cityList;
         private readonly RadioButton unitAuto, unitC, unitF, clockAuto, clock12, clock24;
-        private readonly CheckBox idlePhotos, startupBox;
+        private readonly CheckBox idlePhotos, startupBox, clearTaskbar;
         private readonly Border photoRow;
         private readonly Slider opacity;
 
@@ -969,6 +983,7 @@ namespace Nilam
             opacity = Find<Slider>("OpacitySlider");
             opacityText = Find<TextBlock>("OpacityText");
             startupBox = Find<CheckBox>("StartupBox");
+            clearTaskbar = Find<CheckBox>("ClearTaskbar");
 
             foreach (string name in Settings.CardNames)
             {
@@ -997,6 +1012,13 @@ namespace Nilam
             opacityText.Text = draft.CardOpacity + "%";
             startupWas = StartupEntry.IsEnabled();
             startupBox.IsChecked = startupWas;
+            string taskbarProblem = TaskbarStyle.Unavailable();
+            clearTaskbar.IsChecked = draft.ClearTaskbar && taskbarProblem == null;
+            if (taskbarProblem != null)
+            {
+                clearTaskbar.IsEnabled = false;
+                Find<TextBlock>("ClearTaskbarNote").Text = taskbarProblem;
+            }
             Find<Run>("VersionRun").Text = AppInfo.DisplayName + " " + AppInfo.Version;
             LoadBrightness();
 
@@ -1275,6 +1297,9 @@ namespace Nilam
             draft.PhotoFolder = string.Equals(folder, Settings.DefaultPhotoPath, StringComparison.OrdinalIgnoreCase)
                 ? "" : folder;
             draft.CardOpacity = (int)opacity.Value;
+            // A switch greyed out because the feature cannot run here keeps
+            // whatever was stored, for a copy of Nilam that can.
+            if (clearTaskbar.IsEnabled) draft.ClearTaskbar = clearTaskbar.IsChecked == true;
 
             // Only touch the startup entry if the box was actually changed:
             // rewriting it on every save would repoint it at whichever copy of

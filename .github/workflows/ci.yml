@@ -2,6 +2,8 @@ name: CI
 
 # Builds with the same in-box .NET Framework compiler a user's machine has, runs
 # the tests, and lints the PowerShell. Nothing is installed to do the build.
+# The clear taskbar's two 64-bit files need Visual Studio's C++ compiler, which
+# the runner image already has.
 
 on:
   push:
@@ -27,6 +29,10 @@ jobs:
       - name: Build nilam
         shell: cmd
         run: .\cli\build.cmd
+
+      - name: Build the clear taskbar
+        shell: cmd
+        run: .\taskbar\build.cmd
 
       - name: Build and run the tests
         shell: cmd
@@ -57,6 +63,9 @@ jobs:
           $want = (Get-Content VERSION -TotalCount 1).Trim()
           $got = (Get-Item $exe).VersionInfo.ProductVersion
           if ($got -ne $want) { throw "the exe reports $got but VERSION says $want" }
+          foreach ($f in 'NilamTaskbar.dll', 'NilamTaskbarLoader.exe') {
+            if (-not (Test-Path (Join-Path $dir "bin\taskbar\$f"))) { throw "the installer left out bin\taskbar\$f" }
+          }
 
           & (Join-Path $dir 'uninstall.ps1') -InstallDir $dir
           if (Test-Path $dir) { throw 'the uninstaller left the install folder behind' }
@@ -67,4 +76,6 @@ jobs:
           path: |
             bin/Nilam.exe
             bin/cli/nilam.exe
+            bin/taskbar/NilamTaskbar.dll
+            bin/taskbar/NilamTaskbarLoader.exe
           if-no-files-found: error

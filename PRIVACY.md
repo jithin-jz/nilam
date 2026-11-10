@@ -26,6 +26,10 @@ If you do not choose a city, the app makes no network requests at all.
   media session, the same source the volume flyout shows. It is displayed and
   not stored.
 - **CPU, memory, free disk space and battery level**, displayed and not stored.
+- **Which windows are open, and where**, only while the clear taskbar is on: their
+  position, size, style and class name, and the program name of the window in
+  front, to tell whether a monitor shows only the desktop. Window titles are not
+  read, and nothing is stored.
 - **Pictures from one folder**, shown on the media card while nothing is
   playing. By default this is `Pictures\wallpaper`, used only if it exists. The
   files are opened read-only. You can switch this off or choose another folder
@@ -44,3 +48,7 @@ Everything is in `%APPDATA%\Nilam`, as plain files you can open:
 
 Uninstalling leaves this folder in place so a reinstall restores your layout.
 Run `uninstall.ps1 -Purge` to delete it too.
+
+With the clear taskbar on, `%TEMP%\Nilam` also holds the copy of its helper that
+Explorer loads, and `taskbar-agent.log`: when the helper started and which
+taskbars it found, and errors. No personal content.

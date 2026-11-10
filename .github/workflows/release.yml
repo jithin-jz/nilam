@@ -8,12 +8,16 @@ name: Release
 # It refuses to release unless the tag matches VERSION, the build is clean and
 # the tests pass. Then it publishes a GitHub Release holding:
 #
-#   install.ps1                       the installer, stamped with this tag and
-#                                     the checksum of the source it will build
+#   install.ps1                       the installer, stamped with this tag, the
+#                                     checksum of the source it will build and
+#                                     the checksum of the taskbar files
 #   nilam-source.zip        exactly the files of this tag
+#   Nilam-<ver>-taskbar-x64.zip       the clear taskbar's two 64-bit files, which
+#                                     need a C++ compiler users do not have; the
+#                                     installer downloads and checks them
 #   Nilam-<ver>-win-x86.zip  the built exes, for anyone who would
 #                                     rather not compile
-#   SHA256SUMS.txt                    checksums of the three files above
+#   SHA256SUMS.txt                    checksums of the files above
 #
 # The README's one-line install and `nilam update` both fetch from
 # releases/latest, so a push to main is no longer what reaches users - a tag is.
@@ -48,6 +52,7 @@ jobs:
         run: |
           call .\build.cmd || exit /b 1
           call .\cli\build.cmd || exit /b 1
+          call .\taskbar\build.cmd || exit /b 1
 
       - name: Test
         shell: cmd
@@ -68,11 +73,17 @@ jobs:
           if ($LASTEXITCODE) { throw 'git archive failed' }
           $sourceHash = (Get-FileHash dist/nilam-source.zip -Algorithm SHA256).Hash.ToLower()
 
-          # Stamp the installer with this release and that checksum. From then
-          # on the installer a user downloaded will only build this archive.
+          # The clear taskbar's files, which the installer fetches by this name.
+          $taskbarZip = "dist/Nilam-$env:VERSION-taskbar-x64.zip"
+          Compress-Archive -Path bin/taskbar/NilamTaskbar.dll, bin/taskbar/NilamTaskbarLoader.exe -DestinationPath $taskbarZip
+          $taskbarHash = (Get-FileHash $taskbarZip -Algorithm SHA256).Hash.ToLower()
+
+          # Stamp the installer with this release and both checksums. From then
+          # on the installer a user downloaded will only build this archive and
+          # only install these taskbar files.
           $installer = Get-Content install.ps1 -Raw
-          $stamped = $installer.Replace("`$ReleaseTag = ''", "`$ReleaseTag = '$tag'").Replace("`$ReleaseSourceSha256 = ''", "`$ReleaseSourceSha256 = '$sourceHash'")
-          if ($stamped -eq $installer -or $stamped -notmatch [regex]::Escape($sourceHash)) { throw 'could not stamp install.ps1 - have the two placeholder lines changed?' }
+          $stamped = $installer.Replace("`$ReleaseTag = ''", "`$ReleaseTag = '$tag'").Replace("`$ReleaseSourceSha256 = ''", "`$ReleaseSourceSha256 = '$sourceHash'").Replace("`$ReleaseTaskbarSha256 = ''", "`$ReleaseTaskbarSha256 = '$taskbarHash'")
+          if ($stamped -eq $installer -or $stamped -notmatch [regex]::Escape($sourceHash) -or $stamped -notmatch [regex]::Escape($taskbarHash)) { throw 'could not stamp install.ps1 - have the three placeholder lines changed?' }
           [IO.File]::WriteAllText((Join-Path $out 'install.ps1'), $stamped, (New-Object Text.UTF8Encoding $false))
 
           # The portable zip: the exe expects fonts\ beside bin\. nilam is left
@@ -81,6 +92,7 @@ jobs:
           $stage = New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP 'portable')
           New-Item -ItemType Directory -Force (Join-Path $stage 'bin'), (Join-Path $stage 'fonts') | Out-Null
           Copy-Item bin/Nilam.exe (Join-Path $stage 'bin')
+          Copy-Item bin/taskbar (Join-Path $stage 'bin') -Recurse
           Copy-Item fonts/Michroma-Regular.ttf, fonts/Michroma-OFL.txt, fonts/README.txt (Join-Path $stage 'fonts')
           Copy-Item README.md, LICENSE, NOTICE, VERSION $stage
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath "dist/Nilam-$env:VERSION-win-x86.zip"
@@ -97,6 +109,7 @@ jobs:
           subject-path: |
             dist/install.ps1
             dist/nilam-source.zip
+            dist/Nilam-*-taskbar-x64.zip
             dist/Nilam-*-win-x86.zip
 
       - name: Publish the release

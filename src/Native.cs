@@ -297,6 +297,193 @@ namespace Nilam
             DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref colorref, 4);
         }
 
+        // ---- the taskbar ---------------------------------------------------
+        // What TaskbarStyle needs to tell an open window from an empty desktop,
+        // and to reach the agent inside Explorer. See TaskbarStyle.
+        internal delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr data);
+
+        [DllImport("user32.dll")]
+        internal static extern bool EnumWindows(EnumWindowsProc callback, IntPtr data);
+
+        [DllImport("user32.dll")]
+        internal static extern bool IsWindowVisible(IntPtr hwnd);
+
+        [DllImport("user32.dll")]
+        internal static extern bool IsIconic(IntPtr hwnd);
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+
+        internal const uint GA_ROOT = 2;
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetClassName(IntPtr hwnd, System.Text.StringBuilder name, int capacity);
+
+        internal static string ClassName(IntPtr hwnd)
+        {
+            System.Text.StringBuilder name = new System.Text.StringBuilder(256);
+            return GetClassName(hwnd, name, name.Capacity) > 0 ? name.ToString() : "";
+        }
+
+        [DllImport("user32.dll")]
+        internal static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+
+        internal const uint MONITOR_DEFAULTTONULL = 0;
+        internal const uint MONITOR_DEFAULTTONEAREST = 2;
+
+        [DllImport("user32.dll")]
+        private static extern bool GetLayeredWindowAttributes(IntPtr hwnd, out uint key, out byte alpha, out uint flags);
+
+        /// <summary>A layered window set to be fully see-through, which shows nothing however visible it claims to be.</summary>
+        internal static bool IsFullyTransparent(IntPtr hwnd, int exStyle)
+        {
+            const int WS_EX_LAYERED = 0x00080000;
+            const uint LWA_ALPHA = 0x2;
+            if ((exStyle & WS_EX_LAYERED) == 0) return false;
+            uint key, flags;
+            byte alpha;
+            return GetLayeredWindowAttributes(hwnd, out key, out alpha, out flags) && (flags & LWA_ALPHA) != 0 && alpha == 0;
+        }
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmGetWindowAttribute(IntPtr hwnd, int attribute, out int value, int size);
+
+        private const int DWMWA_CLOAKED = 14;
+
+        /// <summary>
+        /// Hidden by the window manager while still "visible": a suspended Store
+        /// app, a window on another virtual desktop, a shell surface that is
+        /// closed.
+        /// </summary>
+        internal static bool IsCloaked(IntPtr hwnd)
+        {
+            int cloaked;
+            return DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, out cloaked, 4) == 0 && cloaked != 0;
+        }
+
+        [DllImport("user32.dll")]
+        internal static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr OpenProcess(uint access, bool inherit, uint processId);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool QueryFullProcessImageName(IntPtr process, uint flags, System.Text.StringBuilder name, ref int size);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool CloseHandle(IntPtr handle);
+
+        /// <summary>The file name of the program that owns a window, such as "SearchHost.exe"; empty if it cannot be read.</summary>
+        internal static string ProcessFileName(IntPtr hwnd)
+        {
+            const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            if (pid == 0) return "";
+            IntPtr process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+            if (process == IntPtr.Zero) return "";
+            try
+            {
+                System.Text.StringBuilder name = new System.Text.StringBuilder(1024);
+                int size = name.Capacity;
+                if (!QueryFullProcessImageName(process, 0, name, ref size)) return "";
+                return System.IO.Path.GetFileName(name.ToString());
+            }
+            finally
+            {
+                CloseHandle(process);
+            }
+        }
+
+        /// <summary>The main taskbar and one per extra monitor that shows a taskbar.</summary>
+        internal static List<IntPtr> Taskbars()
+        {
+            List<IntPtr> bars = new List<IntPtr>();
+            IntPtr main = FindWindow("Shell_TrayWnd", null);
+            if (main != IntPtr.Zero) bars.Add(main);
+            IntPtr secondary = IntPtr.Zero;
+            for (int guard = 0; guard < 64; guard++)
+            {
+                secondary = FindWindowEx(IntPtr.Zero, secondary, "Shell_SecondaryTrayWnd", null);
+                if (secondary == IntPtr.Zero) break;
+                bars.Add(secondary);
+            }
+            return bars;
+        }
+
+        /// <summary>How long the Explorer that owns the taskbar has been running; zero if that cannot be read.</summary>
+        internal static TimeSpan ExplorerAge()
+        {
+            IntPtr tray = FindWindow("Shell_TrayWnd", null);
+            if (tray == IntPtr.Zero) return TimeSpan.Zero;
+            uint pid;
+            GetWindowThreadProcessId(tray, out pid);
+            try
+            {
+                using (System.Diagnostics.Process explorer = System.Diagnostics.Process.GetProcessById((int)pid))
+                {
+                    TimeSpan age = DateTime.Now - explorer.StartTime;
+                    return age < TimeSpan.Zero ? TimeSpan.Zero : age;
+                }
+            }
+            catch (Exception)
+            {
+                return TimeSpan.Zero;
+            }
+        }
+
+        private static readonly IntPtr HWND_MESSAGE = new IntPtr(-3);
+
+        internal static IntPtr FindMessageWindow(string className)
+        {
+            return FindWindowEx(HWND_MESSAGE, IntPtr.Zero, className, null);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct COPYDATASTRUCT
+        {
+            internal IntPtr dwData;
+            internal int cbData;
+            internal IntPtr lpData;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessageTimeout(IntPtr hwnd, int message, IntPtr wParam, ref COPYDATASTRUCT data,
+                                                        uint flags, uint timeout, out IntPtr result);
+
+        /// <summary>
+        /// Sends a block of data to a window in another process. Windows copies
+        /// it across, including from this 32-bit process to a 64-bit one.
+        /// Returns the window's answer, or -1 if it did not answer in time.
+        /// </summary>
+        internal static int SendCopyData(IntPtr target, IntPtr from, uint tag, byte[] data, uint timeoutMs)
+        {
+            const int WM_COPYDATA = 0x004A;
+            const uint SMTO_ABORTIFHUNG = 0x0002;
+            GCHandle pin = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
+            {
+                COPYDATASTRUCT cds = new COPYDATASTRUCT();
+                cds.dwData = new IntPtr(unchecked((int)tag));
+                cds.cbData = data.Length;
+                cds.lpData = pin.AddrOfPinnedObject();
+                IntPtr result;
+                if (SendMessageTimeout(target, WM_COPYDATA, from, ref cds, SMTO_ABORTIFHUNG, timeoutMs, out result) == IntPtr.Zero)
+                    return -1;
+                return result.ToInt32();
+            }
+            finally
+            {
+                pin.Free();
+            }
+        }
+
         // ---- display brightness -------------------------------------------
         // DDC/CI, the channel to an external monitor. See Brightness.
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

@@ -21,6 +21,13 @@ It helps to be plain about the trust model, because it is unusual.
   source of a release, by the C# compiler that ships with Windows. That avoids
   downloading an unsigned binary, but it does mean the installer runs a build
   script with the PowerShell execution policy bypassed.
+- **The clear taskbar is the one exception.** Its two 64-bit files are C++,
+  which an ordinary PC cannot compile, so they are the only binaries that are
+  downloaded: built by the release workflow, covered by its provenance
+  attestation, and installed only if they match the SHA-256 stamped into that
+  release's installer. They are not code-signed either. While the option is on,
+  one of them runs inside Explorer; while it is off - the default - neither runs
+  at all. Building from source without Visual Studio leaves them out.
 - **Installs come from tagged releases**, not from the development branch. The
   one-line installer and `nilam update` both fetch from `releases/latest`.
 - **Checksums are verified, and they are not signatures.** A release's installer

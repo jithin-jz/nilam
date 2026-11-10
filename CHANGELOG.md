@@ -5,6 +5,19 @@ published under the name Desktop Widgets. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-11-10
+
+### Added
+
+- **Clear taskbar** (Windows 11, off by default). In Settings, under Taskbar:
+  each monitor's taskbar turns fully see-through - background and top line -
+  while nothing is open on it, and returns to exactly how Windows draws it when
+  a window, Start, Search or Task View opens. It works by loading a small 64-bit
+  helper into Explorer; turning the option off, exiting Nilam or Nilam crashing
+  all put the taskbar back at once. The helper is C++ built by the release
+  workflow, and the installer downloads it and checks its checksum. It cannot
+  run alongside TranslucentTB or similar tools.
+
 ## [2.1.0] - 2026-11-09
 
 ### Added

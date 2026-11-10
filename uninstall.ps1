@@ -97,6 +97,16 @@ if ($listed -and ($listed.TrimEnd('\') -ieq $InstallDir.TrimEnd('\'))) {
     Good 'removed the Settings > Apps entry'
 }
 
+# The clear taskbar's agent runs from a copy in the temp folder, because
+# Explorer keeps it open until Explorer restarts. Stopping the app above has
+# already put the taskbar back; copies Explorer has let go of are deleted now,
+# and one still loaded sits idle until the next sign-in.
+$agentDir = Join-Path ([IO.Path]::GetTempPath()) $AppId
+if (Test-Path -LiteralPath $agentDir) {
+    Get-ChildItem -LiteralPath $agentDir -Filter 'NilamTaskbar-*' -File |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue }
+}
+
 if (Test-Path -LiteralPath $InstallDir) {
     Remove-Item -LiteralPath $InstallDir -Recurse -Force
     if (Test-Path -LiteralPath $InstallDir) { Warn "some files in $InstallDir could not be deleted - close anything using them and delete the folder" }
@@ -115,6 +125,8 @@ if ($Purge) {
         Remove-Item -LiteralPath $dir -Recurse -Force
         Good "deleted settings and notes ($dir)"
     }
+    # The agent's log; a copy of the agent still loaded in Explorer stays.
+    if (Test-Path -LiteralPath $agentDir) { Remove-Item -LiteralPath $agentDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
 elseif ($stateDirs) {
     Write-Host ''

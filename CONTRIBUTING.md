@@ -17,6 +17,17 @@ Nothing to install. On Windows 10 1809 or later:
 
 The leading `.\` makes the same lines work in PowerShell and in `cmd`.
 
+The clear taskbar's helper (`taskbar\`) is C++ and needs Visual Studio or the
+free Build Tools with "Desktop development with C++":
+
+```
+.\taskbar\build.cmd    builds bin\taskbar\NilamTaskbar.dll and NilamTaskbarLoader.exe
+```
+
+Without it, everything else builds and the setting is greyed out. Its code runs
+inside Explorer, so keep it small, catch every exception before it can leave a
+callback, and test an Explorer restart as well as a normal start.
+
 CI runs exactly these, plus PSScriptAnalyzer over the PowerShell scripts and an
 install / uninstall round trip.
 

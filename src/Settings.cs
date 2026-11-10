@@ -48,6 +48,8 @@ namespace Nilam
         internal ClockChoice Clock = ClockChoice.Auto;
         internal int CardOpacity = DefaultOpacity;
         internal bool IdlePhotos = true;
+        /// <summary>See-through taskbar on an empty desktop. Off unless chosen: it loads code into Explorer.</summary>
+        internal bool ClearTaskbar;
         /// <summary>Empty means Pictures\wallpaper.</summary>
         internal string PhotoFolder = "";
         /// <summary>Null until a city has been chosen.</summary>
@@ -110,6 +112,7 @@ namespace Nilam
             root["clock"] = Clock == ClockChoice.Hour12 ? "12" : Clock == ClockChoice.Hour24 ? "24" : "auto";
             root["cardOpacity"] = CardOpacity;
             root["idlePhotos"] = IdlePhotos;
+            root["clearTaskbar"] = ClearTaskbar;
             root["photoFolder"] = PhotoFolder == null ? "" : PhotoFolder;
 
             Dictionary<string, object> shown = new Dictionary<string, object>();
@@ -148,6 +151,7 @@ namespace Nilam
             double opacity = Json.Number(root, "cardOpacity", DefaultOpacity);
             s.CardOpacity = (int)Math.Round(Math.Max(MinOpacity, Math.Min(MaxOpacity, opacity)));
             s.IdlePhotos = Json.Bool(root, "idlePhotos", true);
+            s.ClearTaskbar = Json.Bool(root, "clearTaskbar", false);
             string folder = Json.String(root, "photoFolder");
             s.PhotoFolder = folder == null ? "" : folder;
 

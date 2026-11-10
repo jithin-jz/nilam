@@ -530,6 +530,7 @@ namespace Nilam.Tests
             Check.Equal(UnitChoice.Auto, s.Units, "units");
             Check.Equal(ClockChoice.Auto, s.Clock, "clock");
             Check.True(s.IdlePhotos, "idle photos");
+            Check.True(!s.ClearTaskbar, "the clear taskbar is off until chosen");
             Check.True(s.Location == null, "no location");
             Check.True(s.ResolvedPhotoFolder.EndsWith("wallpaper", StringComparison.OrdinalIgnoreCase), "default folder");
         }
@@ -541,6 +542,7 @@ namespace Nilam.Tests
             s.Clock = ClockChoice.Hour24;
             s.CardOpacity = 65;
             s.IdlePhotos = false;
+            s.ClearTaskbar = true;
             s.PhotoFolder = @"D:\Art & Photos";
             s.SetCardEnabled("Notes", false);
             s.Location = new WeatherLocation();
@@ -553,6 +555,7 @@ namespace Nilam.Tests
             Check.Equal(ClockChoice.Hour24, back.Clock, "clock");
             Check.Equal(65, back.CardOpacity, "opacity");
             Check.True(!back.IdlePhotos, "idle photos");
+            Check.True(back.ClearTaskbar, "clear taskbar");
             Check.Equal(@"D:\Art & Photos", back.PhotoFolder, "folder");
             Check.True(!back.IsCardEnabled("Notes") && back.IsCardEnabled("Clock"), "cards");
             Check.Equal("Kozhikode", back.Location.Name, "place");
@@ -568,6 +571,7 @@ namespace Nilam.Tests
             Check.Equal(ClockChoice.Auto, s.Clock, "clock");
             Check.Equal(80, s.CardOpacity, "opacity");
             Check.True(s.IdlePhotos, "idle photos");
+            Check.True(!Settings.FromJson("{\"clearTaskbar\":\"yes\"}").ClearTaskbar, "clear taskbar");
             Check.True(s.IsCardEnabled("Clock"), "cards");
             Check.True(s.Location == null, "location");
         }
@@ -591,6 +595,89 @@ namespace Nilam.Tests
             Check.Equal(UnitChoice.Celsius, Settings.FromJson("\uFEFF{\"units\":\"c\"}").Units, "BOM");
             Check.Equal(UnitChoice.Auto, Settings.FromJson("").Units, "empty");
             Check.Throws(delegate { Settings.FromJson("{{{ not json"); }, "malformed");
+        }
+    }
+
+    internal static class TaskbarRulesTests
+    {
+        private const int WS_CHILD = 0x40000000;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int WS_EX_APPWINDOW = 0x00040000;
+        private const int WS_EX_NOACTIVATE = 0x08000000;
+
+        private static WindowFacts App(string className)
+        {
+            WindowFacts f = new WindowFacts();
+            f.ClassName = className;
+            f.Width = 1280;
+            f.Height = 720;
+            return f;
+        }
+
+        private static void AnOrdinaryWindowCounts()
+        {
+            Check.True(TaskbarRules.CountsAsOpen(App("Chrome_WidgetWin_1")), "browser");
+            Check.True(TaskbarRules.CountsAsOpen(App("CASCADIA_HOSTING_WINDOW_CLASS")), "terminal");
+            // Store apps live in ApplicationFrameWindow; a suspended one is
+            // cloaked, which is checked separately.
+            Check.True(TaskbarRules.CountsAsOpen(App("ApplicationFrameWindow")), "store app");
+        }
+
+        private static void NilamsOwnCardsDoNotCount()
+        {
+            // Exactly the styles Native.MakeDesktopWidget and MakeToolWindowOnly give a card.
+            WindowFacts card = App("HwndWrapper[Nilam.exe;;0]");
+            card.ExStyle = WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE;
+            Check.True(!TaskbarRules.CountsAsOpen(card), "a card");
+            WindowFacts notes = App("HwndWrapper[Nilam.exe;;1]");
+            notes.ExStyle = WS_EX_TOOLWINDOW;
+            Check.True(!TaskbarRules.CountsAsOpen(notes), "the notes card");
+        }
+
+        private static void AToolWindowThatAsksForATaskbarButtonCounts()
+        {
+            WindowFacts f = App("SomePalette");
+            f.ExStyle = WS_EX_TOOLWINDOW | WS_EX_APPWINDOW;
+            Check.True(TaskbarRules.CountsAsOpen(f), "app window style wins");
+        }
+
+        private static void TheShellItselfDoesNotCount()
+        {
+            foreach (string shell in new string[] { "Progman", "WorkerW", "Shell_TrayWnd", "Shell_SecondaryTrayWnd",
+                                                    "Windows.UI.Core.CoreWindow", "XamlExplorerHostIslandWindow" })
+            {
+                Check.True(!TaskbarRules.CountsAsOpen(App(shell)), shell);
+            }
+        }
+
+        private static void ChildAndEmptyWindowsDoNotCount()
+        {
+            WindowFacts child = App("Button");
+            child.Style = WS_CHILD;
+            Check.True(!TaskbarRules.CountsAsOpen(child), "child");
+            WindowFacts tiny = App("Helper");
+            tiny.Width = 1;
+            tiny.Height = 1;
+            Check.True(!TaskbarRules.CountsAsOpen(tiny), "1x1 helper");
+            WindowFacts empty = App("Helper");
+            empty.Width = 0;
+            Check.True(!TaskbarRules.CountsAsOpen(empty), "zero width");
+        }
+
+        private static void StartSearchAndTaskViewAreShellSurfaces()
+        {
+            Check.True(TaskbarRules.IsShellSurface("Windows.UI.Core.CoreWindow", "StartMenuExperienceHost.exe"), "Start");
+            Check.True(TaskbarRules.IsShellSurface("Windows.UI.Core.CoreWindow", "SearchHost.exe"), "Search");
+            Check.True(TaskbarRules.IsShellSurface("Windows.UI.Core.CoreWindow", "searchapp.EXE"), "Search on Windows 10, any case");
+            Check.True(TaskbarRules.IsShellSurface("XamlExplorerHostIslandWindow", "explorer.exe"), "Task View");
+        }
+
+        private static void OtherCoreWindowsAreNot()
+        {
+            // The touch keyboard and emoji panel are CoreWindows too.
+            Check.True(!TaskbarRules.IsShellSurface("Windows.UI.Core.CoreWindow", "TextInputHost.exe"), "text input");
+            Check.True(!TaskbarRules.IsShellSurface("Chrome_WidgetWin_1", "StartMenuExperienceHost.exe"), "wrong class");
+            Check.True(!TaskbarRules.IsShellSurface("", ""), "nothing in front");
         }
     }
 

@@ -46,8 +46,12 @@
   and sit behind every app window.
 - **Yours to arrange.** Drag any card; positions snap to a grid and are
   remembered, on any monitor. Switch off the cards you don't want.
+- **A clear taskbar, if you want one.** On Windows 11 the taskbar can turn
+  see-through while the desktop is all there is to see, and go back to normal
+  the moment a window, Start or Search opens. Off until you switch it on -
+  [how it works](#the-clear-taskbar).
 - **Small.** One exe, no background services, no runtime to install, no admin
-  rights.
+  rights. The clear taskbar adds two small files.
 - **Private.** No account and no telemetry. [What leaves your machine](#your-data-and-privacy)
   fits in three rows.
 
@@ -163,12 +167,43 @@ Right-click any card, or click the icon in the notification area.
 | **Cards** | switch any card off; the rest close up the gap |
 | **Media card** | show pictures from a folder while nothing is playing, and which folder |
 | **Brightness** | a slider for each display. External monitors need DDC/CI, which is usually on and can be set in the monitor's own menu |
+| **Taskbar** | clear taskbar on the desktop (Windows 11) |
 | **Appearance** | how opaque the cards are |
 | **Startup** | start with Windows |
 
 The same menu has **Lock positions**, so a stray drag cannot move anything,
 **Reset positions**, and **Exit widgets**. To start again after exiting, find
 *Nilam* in the Start menu.
+
+---
+
+## The clear taskbar
+
+Switch on **Clear taskbar on the desktop** in Settings and, on each monitor, the
+taskbar becomes fully see-through - background and the thin line along its top -
+whenever nothing is open on that monitor. It goes back to exactly how Windows
+draws it as soon as a window is open there, or Start, Search or Task View is in
+front.
+
+Windows 11 draws its taskbar inside Explorer, and only code running in Explorer
+can change it. So this option does something the rest of Nilam never does: it
+puts a small helper into Explorer, using the same diagnostics interface Visual
+Studio uses to inspect XAML apps. Be aware of what that means:
+
+- **It is off by default**, and nothing is loaded into Explorer until you turn
+  it on.
+- **The taskbar is always put back.** Turning the option off, exiting Nilam, or
+  Nilam crashing all restore the normal taskbar straight away.
+- **The helper stays in Explorer until Explorer restarts**, sitting idle once
+  Nilam is gone. Signing out clears it.
+- **One taskbar tool at a time.** Only one tool can watch the taskbar this way,
+  so quit TranslucentTB, Windhawk's taskbar styling and the like, then sign out
+  and back in before switching this on.
+- **After you sign in, it takes about 45 seconds** to start: Explorer does not
+  accept the helper any sooner.
+- It needs Windows 11 on an Intel or AMD processor, and comes with the published
+  releases; a copy built from source without Visual Studio leaves the switch
+  greyed out.
 
 ---
 
@@ -286,6 +321,16 @@ to its default spot. Cards still on a screen are left alone.
 </details>
 
 <details>
+<summary><b>The clear taskbar does nothing</b></summary>
+
+Wait a minute after signing in - see [the clear taskbar](#the-clear-taskbar).
+If it still stays solid, another taskbar tool is probably holding the taskbar:
+quit it, sign out and back in. `widgets.log` says what happened, and
+`%TEMP%\Nilam\taskbar-agent.log` is the helper's own record from inside
+Explorer.
+</details>
+
+<details>
 <summary><b>The build fails with <code>CS0731</code> or <code>ISupportInitialize</code></b></summary>
 
 `/noconfig` is missing from `build.cmd` - see
@@ -303,6 +348,10 @@ Nothing to install: the compiler is already in Windows.
 .\build.cmd tests      builds bin\Tests.exe
 .\bin\Tests.exe        runs the tests
 ```
+
+The one exception is the clear taskbar's helper, which is C++ and needs Visual
+Studio or its free Build Tools: `.\taskbar\build.cmd` builds `bin\taskbar\`.
+Everything else builds and runs without it.
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - how it is put together, and why
 - [CONTRIBUTING.md](CONTRIBUTING.md) - before sending a change

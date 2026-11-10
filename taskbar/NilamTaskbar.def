@@ -1,0 +1,5 @@
+LIBRARY NilamTaskbar
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE
+    NilamTaskbarHook
