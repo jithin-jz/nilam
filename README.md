@@ -1,132 +1,126 @@
 <h1 align="center">Nilam</h1>
 
 <p align="center">
-  <b>Desktop widgets for Windows.</b><br>
-  Clock, weather, music, system stats and notes - on your desktop, beneath every window.
+  <b>Beautiful desktop widgets for Windows.</b><br>
+  Clock, weather, music, system stats and notes — living on your desktop, beneath every window.
 </p>
 
 <p align="center">
   <a href="https://github.com/jithin-jz/nilam/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/jithin-jz/nilam/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/jithin-jz/nilam/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/jithin-jz/nilam?label=release"></a>
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue"></a>
-  <img alt="Windows 10 version 1809 or later, and Windows 11" src="https://img.shields.io/badge/Windows-10%20(1809+)%20%C2%B7%2011-0078d4">
+  <img alt="Windows 10 (1809+) and Windows 11" src="https://img.shields.io/badge/Windows-10%20(1809+)%20%C2%B7%2011-0078d4">
 </p>
 
 <p align="center">
   <img src="docs/images/desktop.png" width="100%"
-       alt="A Windows 11 desktop with Nilam running on a dark wallpaper: the word TUESDAY in large spaced capitals across the top, and on the right a clock, weather for Kozhikode, a now-playing card with a wave progress bar, system stats, battery and notes.">
+       alt="A Windows 11 desktop with Nilam running over a dark McLaren wallpaper: TUESDAY in large spaced capitals across the top; on the right a clock, weather for Kozhikode, a now-playing card with a wave progress bar, system stats, battery and notes; the taskbar below is fully transparent.">
 </p>
 
-*Nilam* (നിലം) is Malayalam for "the ground" - the layer everything else stands
-on. The widgets live there: every app window draws over them, so they feel like
-part of the desktop rather than something floating above your work.
+<p align="center">
+  <a href="#install"><b>Install</b></a> ·
+  <a href="#features"><b>Features</b></a> ·
+  <a href="#commands"><b>Commands</b></a> ·
+  <a href="docs/ARCHITECTURE.md"><b>Architecture</b></a> ·
+  <a href="CHANGELOG.md"><b>Changelog</b></a>
+</p>
 
-## Features
+---
 
-| | |
-|---|---|
-| **Clock** | Time and date in your Windows format, 12- or 24-hour |
-| **Weather** | Current conditions and today's high and low for any city |
-| **Now playing** | Track, artist and cover art from any media player, with playback controls and seeking |
-| **System** | CPU, memory and free disk space |
-| **Battery** | Charge level and charging state, on laptops |
-| **Notes** | A scratchpad that saves as you type |
-| **Day banner** | The weekday in large spaced capitals |
-| **Brightness** | A slider for every display, including external monitors that support DDC/CI |
-| **Clear taskbar** | Optional: a see-through taskbar while the desktop is empty (Windows 11) |
+*Nilam* (നിലം) is Malayalam for **"the ground"** — the layer everything else stands on.
 
-Drag any card anywhere, on any monitor, and switch off the ones you don't need.
-Nilam is light by design: no background services, no runtime to install, no
-admin rights and no telemetry.
+```mermaid
+flowchart TB
+    A["🪟  Your apps and windows"] --> B["🧩  Nilam cards"] --> C["🖼️  Wallpaper"]
+    style A fill:#2c2c2a,stroke:#383835,color:#f0efec
+    style B fill:#3987e5,stroke:#3987e5,color:#0b0b0b
+    style C fill:#1a1a19,stroke:#383835,color:#c3c2b7
+```
+
+Every window draws over the widgets, so they feel like part of the desktop — never something floating over your work.
 
 ## Install
-
-Run this in PowerShell:
 
 ```powershell
 irm https://github.com/jithin-jz/nilam/releases/latest/download/install.ps1 | iex
 ```
 
-The installer downloads the latest release, verifies its checksum, builds Nilam
-with the C# compiler that ships with Windows, and starts it. No admin rights are
-needed.
+Downloads the latest release, verifies its checksum, builds Nilam with the C# compiler that ships with Windows, and starts it. **No admin rights, no runtime to install.**
 
-Alternatively, download `nilam-source.zip` from the
-[latest release](https://github.com/jithin-jz/nilam/releases/latest), extract it
-and run `install.cmd`.
+<sub>Prefer a zip? Grab `nilam-source.zip` from the [latest release](https://github.com/jithin-jz/nilam/releases/latest) and run `install.cmd`. Requires Windows 10 1809+ or Windows 11 with .NET Framework 4.8 (built in).</sub>
 
-**Requirements:** Windows 10 version 1809 or later, or Windows 11, with .NET
-Framework 4.8 (included in Windows).
+## Features
+
+| | | |
+|---|---|---|
+| 🕐 **Clock** — your Windows format, 12/24-hour | 🌤️ **Weather** — now, high and low, any city | 🎵 **Now playing** — art, controls, seeking |
+| 📊 **System** — CPU, memory, free disk | 🔋 **Battery** — charge and power state | 📝 **Notes** — saves as you type |
+| 📅 **Day banner** — the weekday, large | ☀️ **Brightness** — every display, incl. DDC/CI | 🫥 **Clear taskbar** — see-through on an empty desktop |
+
+Drag any card anywhere, on any monitor, and switch off the ones you don't need.
+
+### Light by design
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/perf-dark.svg">
+  <img src="docs/images/perf-light.svg" width="100%" alt="Idle CPU 0.20% of one core and 51 MB private memory, 91% and 20% lower than version 1.4.2.">
+</picture>
+
+No background services, no telemetry, no admin rights.
+
+### Fits your screen
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/layout-dark.svg">
+  <img src="docs/images/layout-light.svg" width="100%" alt="Default card layout: one block of four rows on a tall 1920x1200 screen, two blocks below the banner on a short 1920x1080 screen.">
+</picture>
 
 ## Usage
 
-Right-click any card, or click the Nilam icon in the notification area, to open
-**Settings**, lock or reset card positions, or exit.
+Right-click any card, or the Nilam tray icon, to open **Settings**, lock or reset positions, or exit.
 
-Settings covers the weather location and units, clock format, which cards to
-show, pictures for the idle media card, display brightness, card opacity, the
-clear taskbar, and starting with Windows.
+<details>
+<summary><b>Settings window</b> — widgets, weather, clock, media pictures, brightness, opacity, startup</summary>
+<br>
+<p align="center"><img src="docs/images/settings.png" width="420" alt="The Nilam settings window in dark theme, with toggles for each widget, weather location, temperature and time format, media card pictures, display brightness, card opacity and start with Windows."></p>
+</details>
 
-### Clear taskbar
+<details>
+<summary><b>Clear taskbar</b> — how it works</summary>
+<br>
 
-When switched on, the taskbar on each monitor becomes fully transparent while
-nothing is open there, and returns to normal as soon as a window, Start, Search
-or Task View opens. It requires Windows 11 on an Intel or AMD processor.
+The taskbar on each monitor turns fully transparent while nothing is open there, and returns as soon as a window, Start, Search or Task View opens. Windows 11 on Intel or AMD only.
 
-Because Windows 11 draws the taskbar inside Explorer, this option runs a small
-helper inside Explorer. It is off by default, the taskbar is always restored when
-you turn it off or Nilam exits, and it takes about 45 seconds to start after you
-sign in. It cannot run alongside other taskbar tools such as TranslucentTB.
+It runs a small helper inside Explorer, is **off by default**, always restores the taskbar when turned off or when Nilam exits, and starts about 45 seconds after sign-in. It can't run alongside tools like TranslucentTB.
+</details>
 
 ## Commands
-
-The installer adds a `nilam` command:
 
 | Command | Description |
 |---|---|
 | `nilam version` | Show the installed and latest versions |
-| `nilam update` | Install the latest release if it is newer |
+| `nilam update` | Install the latest release if newer |
 | `nilam install` | Reinstall the latest release |
-| `nilam uninstall` | Remove Nilam (add `--purge` to also delete your settings and notes) |
+| `nilam uninstall` | Remove Nilam (`--purge` also deletes settings and notes) |
 
-Nilam can also be removed from **Settings > Apps > Installed apps**.
+Also removable from **Settings › Apps › Installed apps**.
 
 ## Privacy
 
-Nilam has no account and no telemetry. It connects only to
-[Open-Meteo](https://open-meteo.com), for the weather of the city you choose, and
-to GitHub, when installing or updating. Your settings, layout and notes are kept
-as plain files in `%APPDATA%\Nilam`. See [PRIVACY.md](PRIVACY.md) for details.
+No account, no telemetry. Nilam only talks to [Open-Meteo](https://open-meteo.com) (weather for your city) and GitHub (install/update). Settings, layout and notes are plain files in `%APPDATA%\Nilam`. Details in [PRIVACY.md](PRIVACY.md).
 
-## Troubleshooting
+Something wrong? Check `%APPDATA%\Nilam\widgets.log` — Settings has a link to the folder.
 
-If something isn't working, check `%APPDATA%\Nilam\widgets.log`. Settings has a
-link that opens the folder.
+## Build from source
 
-## Building from source
-
-```
-.\build.cmd            build bin\Nilam.exe
-.\build.cmd tests      build bin\Tests.exe
-.\bin\Tests.exe        run the tests
-.\taskbar\build.cmd    build the clear taskbar helper (needs Visual Studio C++ tools)
+```powershell
+.\build.cmd             # bin\Nilam.exe
+.\build.cmd tests       # bin\Tests.exe, then run .\bin\Tests.exe
+.\taskbar\build.cmd     # clear taskbar helper (needs Visual Studio C++ tools)
 ```
 
-Everything except the clear taskbar helper builds with tools already in Windows.
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - how Nilam is built, and why
-- [CONTRIBUTING.md](CONTRIBUTING.md) - guidelines for changes
-- [SECURITY.md](SECURITY.md) - reporting vulnerabilities, and the trust model
-- [CHANGELOG.md](CHANGELOG.md) - release history
+Everything except the taskbar helper builds with tools already in Windows. See [ARCHITECTURE](docs/ARCHITECTURE.md) · [CONTRIBUTING](CONTRIBUTING.md) · [SECURITY](SECURITY.md).
 
 ## Licence
 
-Nilam is released under the [MIT licence](LICENSE).
-
-- The banner font, **Michroma**, is included under the SIL Open Font License 1.1.
-  The banner was designed around **Anurati** by Emmeran Richard, which cannot be
-  redistributed; if you own a copy, place it in the install's `fonts` folder.
-- **Weather data by [Open-Meteo.com](https://open-meteo.com/)**, under CC BY 4.0.
-  Its free API is for non-commercial use.
-
-See [NOTICE](NOTICE) for details.
+[MIT](LICENSE). Banner font **Michroma** is bundled under the SIL OFL 1.1 (the banner was designed around **Anurati** by Emmeran Richard — drop your own copy in the `fonts` folder). **Weather data by [Open-Meteo.com](https://open-meteo.com/)**, CC BY 4.0, non-commercial use. See [NOTICE](NOTICE).
