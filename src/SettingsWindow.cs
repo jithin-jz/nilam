@@ -845,16 +845,19 @@ namespace Nilam
 
         <!-- ============================================================ taskbar -->
         <TextBlock Text=""Taskbar"" Style=""{StaticResource Section}""/>
+        <!-- A DockPanel rather than a horizontal StackPanel, which would give
+             the note unlimited width: it is replaced by a longer reason when
+             the switch is unavailable, and must wrap rather than be cut off. -->
         <CheckBox x:Name=""ClearTaskbar"" Style=""{StaticResource Switch}""
                   AutomationProperties.Name=""Clear taskbar on the desktop"">
-          <StackPanel Orientation=""Horizontal"">
+          <DockPanel>
             <TextBlock Style=""{StaticResource RowGlyph}"" Text=""&#xE771;""/>
             <StackPanel VerticalAlignment=""Center"">
               <TextBlock Text=""Clear taskbar on the desktop"" Style=""{StaticResource RowTitle}""/>
               <TextBlock x:Name=""ClearTaskbarNote"" Style=""{StaticResource RowDesc}""
-                         Text=""See-through while nothing is open, back to normal when a window, Start or Search opens""/>
+                         Text=""See-through on each screen while nothing is open there""/>
             </StackPanel>
-          </StackPanel>
+          </DockPanel>
         </CheckBox>
 
         <!-- ============================================================ general -->

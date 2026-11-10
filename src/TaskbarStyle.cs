@@ -191,6 +191,16 @@ namespace Nilam
             SetEnabled(false);
         }
 
+        /// <summary>
+        /// Sends every taskbar its state again, even where nothing seems to have
+        /// changed. The agent ignores a state a taskbar already has, so this
+        /// costs nothing when all is well.
+        /// </summary>
+        internal void Refresh()
+        {
+            if (enabled) Evaluate(true);
+        }
+
         // ------------------------------------------------------------- events
         private void OnWinEvent(IntPtr hook, uint eventId, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
         {

@@ -84,16 +84,14 @@ namespace Nilam
             w.Tag = Name;
             Window = w;
 
-            Rect spot = home;
+            // Only a spot the user dragged the card to is saved, and only that
+            // is kept up to date here; see LayoutPlanner.Place.
             Point2 saved;
-            if (App.Store.Layout.TryGetValue(Name, out saved))
-            {
-                spot = new Rect(saved.Left, saved.Top, home.Width, home.Height);
-            }
-            spot = LayoutPlanner.Fit(spot, home, workAreas);
+            bool dragged = App.Store.Layout.TryGetValue(Name, out saved);
+            Rect spot = LayoutPlanner.Place(dragged ? saved : (Point2?)null, home, workAreas);
             w.Left = spot.Left;
             w.Top = spot.Top;
-            App.Store.Layout[Name] = new Point2(w.Left, w.Top);
+            if (dragged) App.Store.Layout[Name] = new Point2(w.Left, w.Top);
 
             bool takesFocus = TakesFocus;
             w.SourceInitialized += delegate(object s, EventArgs e)
@@ -113,7 +111,6 @@ namespace Nilam
             };
 
             w.MouseLeftButtonDown += OnMouseDown;
-            w.LocationChanged += OnMoved;
             w.ContextMenu = new ContextMenu();
             w.ContextMenuOpening += OnMenuOpening;
 
@@ -157,14 +154,14 @@ namespace Nilam
                 }
             }
             App.Desktop.Place(w);
-            if (w.Left == left && w.Top == top) OnClicked();
-        }
-
-        private void OnMoved(object sender, EventArgs e)
-        {
-            App.Store.Layout[Name] = new Point2(Window.Left, Window.Top);
-            // LocationChanged fires for every pixel of a drag. The file is
-            // written once the card has been still for a moment.
+            if (w.Left == left && w.Top == top)
+            {
+                OnClicked();
+                return;
+            }
+            // Saved only here, at the end of a drag, never when the app moves
+            // a card itself - see Build.
+            App.Store.Layout[Name] = new Point2(w.Left, w.Top);
             App.SaveLayoutSoon();
         }
 

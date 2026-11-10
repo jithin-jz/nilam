@@ -189,6 +189,25 @@ namespace Nilam
             return workAreas.Count > 0 ? Inside(home, workAreas[0]) : home;
         }
 
+        /// <summary>
+        /// Where a card goes when the cards are built or the screens change.
+        ///
+        /// Only a spot the user dragged a card to is ever saved, and that spot
+        /// is kept, via Fit. A card with no saved spot takes its default for
+        /// the screen as it is now, so the same cards sit at the right edge of
+        /// a laptop and of a bigger monitor alike. Up to 2.2.0 the defaults
+        /// were saved too, the moment a card was first shown, which pinned
+        /// every card to wherever the first screen's layout had put it - the
+        /// middle of a larger monitor, for one.
+        /// </summary>
+        internal static Rect Place(Point2? dragged, Rect home, IList<Rect> workAreas)
+        {
+            Rect spot = dragged.HasValue
+                ? new Rect(dragged.Value.Left, dragged.Value.Top, home.Width, home.Height)
+                : home;
+            return Fit(spot, home, workAreas);
+        }
+
         private static Rect Inside(Rect r, Rect wa)
         {
             double x = Math.Max(wa.Left, Math.Min(r.Left, wa.Right - r.Width));

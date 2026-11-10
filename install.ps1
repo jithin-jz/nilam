@@ -471,7 +471,7 @@ try {
         Say "  Installed to : $InstallDir"
         Say "  Settings     : right-click any card, or click the icon in the notification area"
         Say "  Your data    : $(Join-Path $env:APPDATA $AppId)"
-        Say "  Uninstall    : Settings > Apps, or run uninstall.ps1 in the install folder"
+        Say "  Uninstall    : Settings > Apps, nilam uninstall, or uninstall.ps1 in the install folder"
         Say ''
     }
 }

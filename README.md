@@ -68,14 +68,16 @@ No background services, no telemetry, no admin rights.
   <img src="docs/images/layout-light.svg" width="100%" alt="Default card layout: one block of four rows on a tall 1920x1200 screen, two blocks below the banner on a short 1920x1080 screen.">
 </picture>
 
+Cards you haven't moved follow each screen's own layout, so they sit at the right edge of a laptop and of a big monitor alike. A card you drag stays where you put it, and **Reset positions** sends it back.
+
 ## Usage
 
 Right-click any card, or the Nilam tray icon, to open **Settings**, lock or reset positions, or exit.
 
 <details>
-<summary><b>Settings window</b>: widgets, weather, clock, media pictures, brightness, opacity, startup</summary>
+<summary><b>Settings window</b>: widgets, weather, clock, media pictures, brightness, clear taskbar, opacity, startup</summary>
 <br>
-<p align="center"><img src="docs/images/settings.png" width="420" alt="The Nilam settings window in dark theme, with toggles for each widget, weather location, temperature and time format, media card pictures, display brightness, card opacity and start with Windows."></p>
+<p align="center"><img src="docs/images/settings.png" width="420" alt="The Nilam settings window in dark theme, with toggles for each widget, weather location, temperature and time format, media card pictures, display brightness, the clear taskbar, card opacity and start with Windows."></p>
 </details>
 
 <details>
@@ -84,7 +86,9 @@ Right-click any card, or the Nilam tray icon, to open **Settings**, lock or rese
 
 The taskbar on each monitor turns fully transparent while nothing is open there, and returns as soon as a window, Start, Search or Task View opens. Windows 11 on Intel or AMD only.
 
-It runs a small helper inside Explorer, is **off by default**, always restores the taskbar when turned off or when Nilam exits, and starts about 45 seconds after sign-in. It can't run alongside tools like TranslucentTB.
+It runs a small helper inside Explorer, is **off by default**, always restores the taskbar when turned off or when Nilam exits, and starts about 45 seconds after sign-in. The helper stays in Explorer, idle, until you sign out.
+
+Only one taskbar tool can work this way at a time: quit TranslucentTB, Windhawk's taskbar styling and the like, then sign out and back in before turning it on. If the taskbar stays solid, `%TEMP%\Nilam\taskbar-agent.log` says why.
 </details>
 
 ## Commands

@@ -258,7 +258,7 @@ $list = $dialog.FindName('CityList')
 [void]$list.Items.Add("$place, Kerala, India")
 $list.SelectedIndex = 0
 $list.Visibility = 'Visible'
-foreach ($checked in 'UnitAuto', 'ClockAuto', 'IdlePhotos', 'StartupBox') { $dialog.FindName($checked).IsChecked = $true }
+foreach ($checked in 'UnitAuto', 'ClockAuto', 'IdlePhotos', 'ClearTaskbar', 'StartupBox') { $dialog.FindName($checked).IsChecked = $true }
 foreach ($n in $names) { $dialog.FindName("Card$n").IsChecked = $true }
 $dialog.FindName('PhotoFolder').Text = 'C:\Users\you\Pictures\wallpaper'
 $dialog.FindName('BrightnessStatus').Text = 'Changes show as you drag. Cancel puts them back.'

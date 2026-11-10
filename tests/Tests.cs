@@ -370,6 +370,30 @@ namespace Nilam.Tests
             Rect home = new Rect(904, 32, 160, 160);
             Check.Equal(home, LayoutPlanner.Fit(new Rect(10, 10, 160, 160), home, new List<Rect>()), "home");
         }
+
+        private static void ACardNobodyMovedFollowsTheScreen()
+        {
+            // The bug: the laptop's defaults were saved the first time the cards
+            // were shown, so on a 24-inch monitor at 100% the cards stayed at
+            // x=904 - the middle of the screen - and the banner off centre.
+            List<Rect> laptop = new List<Rect> { new Rect(0, 0, 1280, 752) };
+            List<Rect> monitor = new List<Rect> { new Rect(0, 0, 1920, 1032) };
+            LayoutPlan onLaptop = LayoutPlanner.Plan(laptop[0], All);
+            LayoutPlan onMonitor = LayoutPlanner.Plan(monitor[0], All);
+            Check.Equal(new Rect(904, 32, 160, 160), LayoutPlanner.Place(null, onLaptop.Cards["Clock"], laptop), "the laptop's default");
+            Check.Equal(new Rect(1544, 176, 160, 160), LayoutPlanner.Place(null, onMonitor.Cards["Clock"], monitor),
+                        "the monitor's own default, at its right edge");
+            Check.Equal(new Rect(576, 32, 760, 92), LayoutPlanner.Place(null, onMonitor.Cards[LayoutPlanner.Banner], monitor),
+                        "the banner centred on the monitor");
+        }
+
+        private static void ACardTheUserDraggedStaysWhereItWasPut()
+        {
+            List<Rect> monitor = new List<Rect> { new Rect(0, 0, 1920, 1032) };
+            Rect home = LayoutPlanner.Plan(monitor[0], All).Cards["Clock"];
+            Check.Equal(new Rect(200, 120, 160, 160), LayoutPlanner.Place(new Point2(200, 120), home, monitor), "where it was dragged");
+            Check.Equal(home, LayoutPlanner.Place(new Point2(5000, 120), home, monitor), "home again once it is off every screen");
+        }
     }
 
     internal static class PlaybackClockTests

@@ -5,6 +5,31 @@ published under the name Desktop Widgets. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] - 2026-11-10
+
+### Fixed
+
+- **Cards follow the screen they are on.** Only a card you drag is remembered
+  where you put it; the others take the default layout of the screen as it is
+  now. Until now every card's default spot was saved the first time it was
+  shown, so cards first shown on a laptop sat in the middle of a larger monitor,
+  with the banner off centre. **If your cards are stuck like that, right-click
+  any card and choose Reset positions once** - from then on they follow each
+  screen.
+- **Reset positions** forgets the saved spots instead of saving the current
+  screen's defaults, so the cards go on following the screen afterwards.
+- After a display change, the clear taskbar sends every taskbar its state again
+  rather than only what changed, so a taskbar Windows has rebuilt does not stay
+  solid.
+- The clear taskbar's line in Settings is no longer cut off at the window's
+  normal width, and the reason shown when it is unavailable wraps instead.
+
+### Changed
+
+- The README again says that only one taskbar tool can work at a time and where
+  the clear taskbar's log is, and its settings picture shows the Taskbar switch.
+- The installer's closing summary mentions `nilam uninstall`.
+
 ## [2.2.0] - 2026-11-10
 
 ### Added

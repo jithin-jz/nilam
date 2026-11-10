@@ -298,13 +298,34 @@ namespace Nilam
             }
             Replan();
             List<Rect> areas = WorkAreas();
+            bool changed = false;
             foreach (Card card in cards)
             {
                 Window w = card.Window;
-                Rect now = new Rect(w.Left, w.Top, card.Home.Width, card.Home.Height);
-                Rect fit = LayoutPlanner.Fit(now, card.Home, areas);
-                if (fit.Left != w.Left) w.Left = fit.Left;
-                if (fit.Top != w.Top) w.Top = fit.Top;
+                // A card the user dragged is checked where it is now - Windows
+                // moves windows off a monitor that goes away. One never dragged
+                // moves to the new screen's default; see LayoutPlanner.Place.
+                bool dragged = Store.Layout.ContainsKey(card.Name);
+                Rect fit = LayoutPlanner.Place(dragged ? new Point2(w.Left, w.Top) : (Point2?)null, card.Home, areas);
+                if (fit.Left == w.Left && fit.Top == w.Top) continue;
+                w.Left = fit.Left;
+                w.Top = fit.Top;
+                if (dragged)
+                {
+                    Store.Layout[card.Name] = new Point2(fit.Left, fit.Top);
+                    changed = true;
+                }
+            }
+            if (changed) SaveLayoutSoon();
+
+            // If a display change rebuilds a taskbar's insides while its window
+            // stays the same, the rebuilt one starts out solid - and the clear
+            // taskbar, which only sends what has changed, would not notice.
+            // Sending every state again covers that.
+            if (Taskbar != null)
+            {
+                try { Taskbar.Refresh(); }
+                catch (Exception ex) { Log.Error("taskbar", ex); }
             }
         }
 
@@ -408,8 +429,11 @@ namespace Nilam
             {
                 card.Window.Left = card.Home.Left;
                 card.Window.Top = card.Home.Top;
-                Store.Layout[card.Name] = new Point2(card.Home.Left, card.Home.Top);
             }
+            // Every saved spot is forgotten - hidden cards' too - rather than
+            // the defaults being saved, so the cards go on following each
+            // screen's default; see LayoutPlanner.Place.
+            Store.Layout.Clear();
             layoutSave.Stop();
             Store.SaveLayout();
         }

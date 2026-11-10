@@ -165,6 +165,13 @@ covered by tests rather than by borrowing laptops.
 - On a shorter one - 1080p at 150% scaling leaves 672 units and the block needs
   688 - the rows are split evenly across blocks placed side by side below the
   banner, instead of overlapping.
+- Only a position the user dragged a card to is saved (`LayoutPlanner.Place`).
+  A card that was never moved has no saved position and takes the default for
+  the screen as it is now, so the same cards sit at the right edge of a laptop
+  and of a larger monitor alike. Up to 2.2.0 the defaults were saved too, the
+  moment a card was first shown, which pinned the cards to the first screen's
+  layout; **Reset positions** now forgets saved positions rather than saving
+  the defaults.
 - A saved position is kept if at least half the card is still on *any* monitor's
   work area. Otherwise the card returns to its default spot. This is re-checked
   whenever the display configuration or the work area changes, not only at
@@ -342,7 +349,7 @@ installs the files only if they match.
 
 ## State
 
-Everything lives in `%APPDATA%\Nilam` (see the README for the files).
+Everything lives in `%APPDATA%\Nilam` (see [PRIVACY.md](../PRIVACY.md) for the files).
 Releases before 2.0 - when the project was called Desktop Widgets - used
 `%LOCALAPPDATA%\KiroDesktopWidgets`; on first run `Store` copies layout, notes and
 the weather location across and leaves a note in the old folder. The program

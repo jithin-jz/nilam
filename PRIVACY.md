@@ -42,12 +42,12 @@ Everything is in `%APPDATA%\Nilam`, as plain files you can open:
 | File | Contents |
 |---|---|
 | `settings.json` | your settings, including the chosen city and its coordinates |
-| `layout.json` | where each card is |
+| `layout.json` | where you have dragged cards to, and whether positions are locked |
 | `notes.txt` | the text of the notes card, unencrypted |
 | `widgets.log` | start and stop times, and errors; no personal content |
 
 Uninstalling leaves this folder in place so a reinstall restores your layout.
-Run `uninstall.ps1 -Purge` to delete it too.
+Run `nilam uninstall --purge`, or `uninstall.ps1 -Purge`, to delete it too.
 
 With the clear taskbar on, `%TEMP%\Nilam` also holds the copy of its helper that
 Explorer loads, and `taskbar-agent.log`: when the helper started and which
