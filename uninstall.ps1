@@ -4,7 +4,8 @@
     By default your layout, notes and settings are kept, so a reinstall puts the
     cards back exactly where you had them. Pass -Purge to delete those too.
 
-    This is also what the Uninstall button under Settings > Apps runs.
+    This is also what the Uninstall button under Settings > Apps and the
+    `nilam uninstall` command run.
 #>
 [CmdletBinding()]
 param(

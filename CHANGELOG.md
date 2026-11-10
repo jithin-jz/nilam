@@ -17,6 +17,13 @@ published under the name Desktop Widgets. The format follows
   all put the taskbar back at once. The helper is C++ built by the release
   workflow, and the installer downloads it and checks its checksum. It cannot
   run alongside TranslucentTB or similar tools.
+- **`nilam uninstall`** removes Nilam from the command line - the same uninstaller
+  as Settings > Apps. It asks first (`--yes` skips the question) and keeps your
+  layout, notes and settings unless you add `--purge`.
+
+### Changed
+
+- The README's opening picture is now a screenshot of a real desktop.
 
 ## [2.1.0] - 2026-11-09
 

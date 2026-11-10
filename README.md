@@ -14,12 +14,11 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/hero.png" width="100%"
-       alt="Seven Nilam cards on a desktop: a clock, weather for Kozhikode, a now-playing card with a wave progress bar, system stats, battery and notes stacked on the right, and the word SATURDAY in large spaced capitals across the top.">
+  <img src="docs/images/desktop.png" width="100%"
+       alt="A Windows 11 desktop with Nilam running: the word TUESDAY in large spaced capitals across the top, and on the right a clock, weather for Kozhikode, a now-playing card with a wave progress bar, system stats, battery and notes. The taskbar at the bottom is fully see-through, showing the dark wallpaper behind its icons.">
 </p>
 <p align="center"><sub>
-  Drawn from the app's own card markup with sample data, on a generated backdrop -
-  <a href="tools/make-readme-images.ps1">see how</a>.
+  A real desktop, with the <a href="#the-clear-taskbar">clear taskbar</a> on.
 </sub></p>
 
 > *Nilam* (നിലം) is Malayalam for the ground: the layer everything else stands
@@ -239,11 +238,13 @@ measurements behind each choice.
 nilam version   # your installed version, and the latest release
 nilam update    # install the latest release, if it is newer
 nilam install   # reinstall the latest release regardless
+nilam uninstall # remove Nilam; add --purge to delete your layout, notes and settings too
 ```
 
-To remove it, use **Settings > Apps > Installed apps > Nilam > Uninstall**, or
-run `uninstall.ps1` from the install folder. Your layout, notes and settings are
-kept unless you add `-Purge`.
+To remove it, run `nilam uninstall`, use **Settings > Apps > Installed apps >
+Nilam > Uninstall**, or run `uninstall.ps1` from the install folder - all three
+do the same thing. Your layout, notes and settings are kept unless you ask for
+them to go (`--purge`, or `-Purge` for the script).
 
 **Coming from Desktop Widgets 1.x?** Nilam is the same project under its new
 name. Installing it replaces the old copy and carries your layout, notes and

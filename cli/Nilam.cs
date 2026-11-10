@@ -62,6 +62,7 @@ namespace Nilam
                 // carries on regardless.
                 case "install": return CmdInstall(true);
                 case "update": return CmdInstall(false);
+                case "uninstall": return CmdUninstall(args);
                 default: return CmdHelp();
             }
         }
@@ -186,13 +187,92 @@ namespace Nilam
             return 0;
         }
 
+        /// <summary>
+        /// Runs this install's own uninstall.ps1 - the same script as the
+        /// Uninstall button under Settings > Apps - so there is one way of
+        /// removing Nilam, not two that can drift apart.
+        /// </summary>
+        private static int CmdUninstall(string[] args)
+        {
+            bool purge = HasFlag(args, "--purge");
+            bool yes = HasFlag(args, "--yes") || HasFlag(args, "-y");
+            string dir = InstallDir;
+            string script = Path.Combine(dir, "uninstall.ps1");
+            if (!File.Exists(script))
+            {
+                Console.WriteLine("No Nilam install was found at " + dir + ", so there is nothing to remove.");
+                return 1;
+            }
+
+            string local = ReadLocalVersion();
+            Console.WriteLine("This removes Nilam" + (local == null ? "" : " " + local) + " from " + dir + ",");
+            Console.WriteLine("with its Start menu entry, start-with-Windows entry and this command.");
+            Console.WriteLine(purge
+                ? "Your layout, notes and settings will be deleted as well."
+                : "Your layout, notes and settings are kept. Add --purge to delete them too.");
+
+            if (!yes)
+            {
+                // Nobody to ask - a script, or input piped in. Removing an app
+                // must not happen on a guess.
+                if (Console.IsInputRedirected)
+                {
+                    Console.WriteLine("Nothing was removed. Run `nilam uninstall --yes` to confirm without a prompt.");
+                    return 1;
+                }
+                Console.Write("Remove it? [y/N] ");
+                string answer = Console.ReadLine();
+                if (answer == null || !answer.Trim().StartsWith("y", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Nothing was removed.");
+                    return 1;
+                }
+            }
+
+            // The uninstaller deletes this very exe, so it runs in its own
+            // window and this process ends at once instead of holding the file
+            // open. It starts in the temp folder because it deletes the folder
+            // it would otherwise be standing in.
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + script + "\" -InstallDir \"" + dir + "\"" +
+                            (purge ? " -Purge" : ""),
+                WorkingDirectory = Path.GetTempPath(),
+                UseShellExecute = true
+            };
+            try
+            {
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not start the uninstaller: " + ex.Message);
+                return 1;
+            }
+            Console.WriteLine("A new window shows the uninstaller's progress.");
+            return 0;
+        }
+
+        private static bool HasFlag(string[] args, string flag)
+        {
+            for (int i = 1; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], flag, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
+        }
+
         private static int CmdHelp()
         {
             Console.WriteLine("nilam - command-line tool for Nilam, desktop widgets for Windows");
             Console.WriteLine();
-            Console.WriteLine("  nilam version   Show the installed version and the latest release");
-            Console.WriteLine("  nilam update    Install the latest release if it is newer");
-            Console.WriteLine("  nilam install   Install or reinstall the latest release");
+            Console.WriteLine("  nilam version     Show the installed version and the latest release");
+            Console.WriteLine("  nilam update      Install the latest release if it is newer");
+            Console.WriteLine("  nilam install     Install or reinstall the latest release");
+            Console.WriteLine("  nilam uninstall   Remove Nilam; your layout, notes and settings are kept");
+            Console.WriteLine("                    --purge  delete those as well");
+            Console.WriteLine("                    --yes    do not ask first");
             Console.WriteLine();
             Console.WriteLine("To open the widgets themselves, find Nilam in the Start menu.");
             return 0;
